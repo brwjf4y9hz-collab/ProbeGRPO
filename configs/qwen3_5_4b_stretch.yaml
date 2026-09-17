@@ -1,0 +1,14 @@
+# Apply these overrides to either 2B config only after the 2B pipeline is stable.
+model_path: Qwen/Qwen3.5-4B
+
+actor_rollout_ref:
+  rollout:
+    tensor_model_parallel_size: 2
+    gpu_memory_utilization: 0.7
+
+trainer:
+  n_gpus_per_node: 2
+
+system:
+  CUDA_VISIBLE_DEVICES: "0,1"
+
