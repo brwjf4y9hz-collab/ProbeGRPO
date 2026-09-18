@@ -123,4 +123,3 @@ class CounterfactualProber:
             state_match=False,
             skipped_reason=reason,
         )
-

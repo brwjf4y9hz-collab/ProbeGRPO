@@ -46,7 +46,6 @@ def blend_probe_advantages(
     lambda_coef: float = 0.5,
 ) -> List[List[float]]:
     """Add standardized local credit only to explicitly selected token positions."""
-
     if lambda_coef < 0:
         raise ValueError("lambda_coef must be non-negative")
     result = [list(map(float, row)) for row in base_advantages]
@@ -66,4 +65,3 @@ def blend_probe_advantages(
                 )
             row[token_index] += lambda_coef * delta_z
     return result
-

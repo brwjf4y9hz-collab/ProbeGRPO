@@ -50,13 +50,20 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data contract and integ
 The core and smoke test intentionally require only the Python standard library.
 
 ```bash
+cd ProbeGRPO
+mamba env create -f environment.yml
+conda activate probegrpo
 make check
 ```
+
+If the environment already exists, only activate it and run `make check`. This local macOS
+environment is for development and CPU tests; create a separate environment on the NVIDIA Linux
+host for RAGEN, verl, PyTorch CUDA, and vLLM.
 
 Expected final line:
 
 ```text
-ProbeGRPO smoke test passed
+ProbeGRPO CPU data-flow smoke test passed
 ```
 
 ## RAGEN + Qwen3.5
@@ -114,4 +121,3 @@ report when extra probes improve credit diagnostics but fail to improve final re
 > Built ProbeGRPO, a Qwen3.5-based Agent-RL system on RAGEN/verl with deterministic trajectory
 > replay, budget-aware counterfactual credit probing, turn-level advantage shaping, and matched-cost
 > evaluation on Sokoban and WebShop.
-

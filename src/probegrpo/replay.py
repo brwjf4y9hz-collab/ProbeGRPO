@@ -78,4 +78,3 @@ def state_from_mapping(
         reward=float(reward),
         metadata={"raw_state": dict(raw_state)},
     )
-

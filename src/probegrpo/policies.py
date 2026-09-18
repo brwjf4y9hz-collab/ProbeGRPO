@@ -7,7 +7,6 @@ from typing import Callable, List, Optional, Sequence, Tuple
 from .replay import ReplayableEnv
 from .types import ReplayState, RolloutOutcome
 
-
 CompletionFn = Callable[[str, Sequence[str], Tuple[str, ...], int], str]
 TokenCounter = Callable[[str], int]
 
@@ -58,4 +57,3 @@ class CallbackSuffixPolicy:
             terminal=state.terminal,
             actions=tuple(actions),
         )
-

@@ -9,7 +9,6 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 
 from .types import Anchor, ProbeResult, TurnRecord
 
-
 FEATURE_DIM = 7
 
 
@@ -56,6 +55,7 @@ class AnchorScheduler(ABC):
 
     def observe(self, turn: TurnRecord, result: ProbeResult) -> None:
         """Optionally learn from the measured value of a selected anchor."""
+        return None
 
 
 class RandomScheduler(AnchorScheduler):
@@ -154,10 +154,16 @@ class LinearUCBScheduler(AnchorScheduler):
         )
         if warming_up:
             selected = self._stratified_sample(eligible, count)
-            return [Anchor(turn=turn, scheduler="linear_ucb_warmup", score=0.0) for turn in selected]
+            return [
+                Anchor(turn=turn, scheduler="linear_ucb_warmup", score=0.0)
+                for turn in selected
+            ]
         if self._rng.random() < self.exploration_rate:
             selected = self._rng.sample(eligible, count)
-            return [Anchor(turn=turn, scheduler="linear_ucb_explore", score=0.0) for turn in selected]
+            return [
+                Anchor(turn=turn, scheduler="linear_ucb_explore", score=0.0)
+                for turn in selected
+            ]
 
         ranked = sorted(
             ((self.score(turn), turn) for turn in eligible),
@@ -225,4 +231,3 @@ def _dot(left: Sequence[float], right: Sequence[float]) -> float:
 
 def _mat_vec(matrix: Sequence[Sequence[float]], vector: Sequence[float]) -> List[float]:
     return [_dot(row, vector) for row in matrix]
-
