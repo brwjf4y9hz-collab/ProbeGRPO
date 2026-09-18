@@ -1,4 +1,4 @@
-"""Pack sparse probe credits into the dense layout expected by RAGEN/verl."""
+"""Pack sparse probe credits into the dense layout expected by verl."""
 
 from __future__ import annotations
 

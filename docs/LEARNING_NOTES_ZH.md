@@ -24,6 +24,10 @@
 - Tiny Sokoban smoke test 证明的是软件逻辑，不是模型效果。
 - Qwen3.5 配置存在不等于旧版 RAGEN 依赖已经兼容。
 
+因此训练栈采用当前 verl 的固定 commit 和 `uv.lock`；RAGEN 只作为 Sokoban/WebShop 环境
+实现的参考。先用 GSM8K 跑五个标准 GRPO update，是为了把模型、vLLM、LoRA、FSDP2、
+checkpoint 与恢复训练单独验证，再引入多轮环境和反事实 probe。
+
 ## 五个核心模块的个人理解
 
 - `replay.py`：根据相同 task、seed 和历史 action prefix，确定性重建当前 turn 之前的

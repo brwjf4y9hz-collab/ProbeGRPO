@@ -15,7 +15,7 @@ Use seeds `17`, `42`, and `101`. Tune on seed `17`; freeze all choices before ru
 
 Every run records:
 
-- project and RAGEN git revisions;
+- ProbeGRPO and verl git revisions, plus the RAGEN environment-source revision when applicable;
 - model revision and tokenizer/chat-template hash;
 - complete resolved Hydra config;
 - CUDA, driver, torch, transformers, vLLM, verl, and PEFT versions;
@@ -39,4 +39,3 @@ frozen winner and baselines on all three seeds.
 
 Store machine-readable records in ignored `outputs/*.jsonl`. Commit only redacted summaries,
 figures, resolved configs, and a manifest with hashes. Negative and crashed runs stay in the table.
-
