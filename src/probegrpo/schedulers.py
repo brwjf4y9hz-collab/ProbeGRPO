@@ -1,5 +1,5 @@
 """Matched-budget anchor selection strategies."""
-
+##一条 trajectory 里有很多 turn，到底挑哪几个 turn 去做 expensive counterfactual probe？
 from __future__ import annotations
 
 import math
@@ -14,7 +14,8 @@ FEATURE_DIM = 7
 
 def turn_features(turn: TurnRecord) -> Tuple[float, ...]:
     """Return bounded, interpretable features for online probe-value prediction."""
-
+##这部分是给后面的 LinearUCBScheduler 用的
+##它把一个 turn 变成 7 维特征
     entropy = _clip(turn.mean_entropy / 10.0)
     uncertainty = 1.0 / (1.0 + max(0.0, turn.logprob_margin))
     position = _clip(turn.turn_fraction)
@@ -22,14 +23,20 @@ def turn_features(turn: TurnRecord) -> Tuple[float, ...]:
     legal_count = _clip(math.log1p(len(turn.legal_actions)) / math.log(33.0))
     suffix_cost = _clip(math.log1p(max(0, turn.suffix_tokens)) / math.log(8193.0))
     outcome = max(-1.0, min(1.0, float(turn.final_reward)))
-    return (entropy, uncertainty, position, invalid_ratio, legal_count, suffix_cost, outcome)
+    return (entropy, ##模型有多犹豫。
+            uncertainty, ##第一候选 action和第二候选 action之间差多少
+            position, ##表示这个 turn 在 trajectory 的什么位置
+            invalid_ratio, ##Agent 最近/当前产生非法 action 的比例
+            legal_count, ##当前有多少种可选 action
+            suffix_cost, ##probe cost 特征
+            outcome)##这条 trajectory 最终结果怎么样
 
 
-def _clip(value: float) -> float:
+def _clip(value: float) -> float:##这样 Linear UCB 数值更稳定。
     return max(0.0, min(1.0, float(value)))
 
 
-def _eligible(candidates: Iterable[TurnRecord]) -> List[TurnRecord]:
+def _eligible(candidates: Iterable[TurnRecord]) -> List[TurnRecord]:##先过滤哪些 turn 能 probe
     return [
         turn
         for turn in candidates
@@ -39,7 +46,7 @@ def _eligible(candidates: Iterable[TurnRecord]) -> List[TurnRecord]:
     ]
 
 
-class AnchorScheduler(ABC):
+class AnchorScheduler(ABC):##这是所有 scheduler 的抽象基类
     """Select a fixed number of turns without changing the rollout budget."""
 
     name = "base"
@@ -58,7 +65,7 @@ class AnchorScheduler(ABC):
         return None
 
 
-class RandomScheduler(AnchorScheduler):
+class RandomScheduler(AnchorScheduler):#不做聪明选择，随机 probe
     name = "random"
 
     def __init__(self, seed: int = 0) -> None:
@@ -78,7 +85,7 @@ class RandomScheduler(AnchorScheduler):
         return [Anchor(turn=turn, scheduler=self.name, score=0.0) for turn in chosen]
 
 
-class EntropyScheduler(AnchorScheduler):
+class EntropyScheduler(AnchorScheduler):##越不确定的 turn，越值得花 probe budget 去看
     name = "entropy"
 
     def select(
@@ -100,9 +107,9 @@ class EntropyScheduler(AnchorScheduler):
         ]
 
 
-class LinearUCBScheduler(AnchorScheduler):
+class LinearUCBScheduler(AnchorScheduler):##边训练边学习：什么样的 turn 最值得 probe
     """Online cost-aware anchor scheduler using Sherman-Morrison updates.
-
+  ##cost-aware
     The regression target is ``abs(delta_reward) / additional_rollout_tokens``. During warm-up,
     anchors are sampled across early/middle/late trajectory thirds. After warm-up, LinearUCB ranks
     candidates, while ``exploration_rate`` reserves occasional random batches.
@@ -113,7 +120,7 @@ class LinearUCBScheduler(AnchorScheduler):
     def __init__(
         self,
         alpha: float = 1.0,
-        warmup_updates: int = 20,
+        warmup_updates: int = 20,##warmup
         warmup_probes: int = 200,
         exploration_rate: float = 0.1,
         l2: float = 1.0,
@@ -158,14 +165,14 @@ class LinearUCBScheduler(AnchorScheduler):
                 Anchor(turn=turn, scheduler="linear_ucb_warmup", score=0.0)
                 for turn in selected
             ]
-        if self._rng.random() < self.exploration_rate:
+        if self._rng.random() < self.exploration_rate:##保留 10% random exploration
             selected = self._rng.sample(eligible, count)
             return [
                 Anchor(turn=turn, scheduler="linear_ucb_explore", score=0.0)
                 for turn in selected
             ]
 
-        ranked = sorted(
+        ranked = sorted(##用 LinearUCB 排名
             ((self.score(turn), turn) for turn in eligible),
             key=lambda pair: (-pair[0], pair[1].anchor_id),
         )
@@ -181,7 +188,7 @@ class LinearUCBScheduler(AnchorScheduler):
         uncertainty = math.sqrt(max(0.0, _dot(x, _mat_vec(self._a_inv, x))))
         return mean + self.alpha * uncertainty
 
-    def observe(self, turn: TurnRecord, result: ProbeResult) -> None:
+    def observe(self, turn: TurnRecord, result: ProbeResult) -> None:##更新 LinearUCB
         if not result.valid or result.additional_rollout_tokens <= 0:
             return
         x = list(turn_features(turn))
@@ -200,6 +207,7 @@ class LinearUCBScheduler(AnchorScheduler):
         self.observations += 1
 
     def _stratified_sample(self, eligible: Sequence[TurnRecord], count: int) -> List[TurnRecord]:
+        ##warmup 阶段别只采轨迹前面或者后面，保证位置覆盖比较均匀
         buckets = {0: [], 1: [], 2: []}
         for turn in eligible:
             bucket = min(2, int(_clip(turn.turn_fraction) * 3))
