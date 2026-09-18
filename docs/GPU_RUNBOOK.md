@@ -1,51 +1,86 @@
-# GPU runbook
+# AutoDL GPU runbook
 
-## Read this first
+## Fixed stack
 
-The inspected RAGEN revision (`d97bb328...`) pins `vllm==0.8.2`. Qwen3.5 requires a much newer
-Transformers/vLLM stack, so installing RAGEN's default dependencies and merely changing the model
-name is not valid. The repository includes a compatibility checker precisely to prevent that silent
-failure.
+ProbeGRPO trains on current `verl`; it does not install RAGEN's pinned training stack. The first
+GPU milestone uses:
 
-The CPU core is already runnable. GPU validation is a separate milestone and must happen on the
-actual NVIDIA host.
+- `verl` commit `cf14ded3a448107e70a206fd201817cc1cbae348`;
+- the commit's frozen `uv.lock` with the `vllm` and `fsdp` extras;
+- `Qwen/Qwen3.5-2B`;
+- one NVIDIA GPU with at least 45,000 MiB visible memory;
+- driver CUDA compatibility 12.8 or newer;
+- at least 80 GiB free workspace storage.
 
-## Recommended hardware
+RAGEN remains an environment reference: its Sokoban and WebShop behavior will be adapted to verl's
+current `AgentLoop` interface after the standard GRPO stack passes. Do not install RAGEN's
+`vllm==0.8.2` dependency into this runtime.
 
-- Default: one 48 GB GPU or two 24 GB GPUs for `Qwen/Qwen3.5-2B` LoRA.
-- Development fallback: reduce environment groups to 2 and group size to 2.
-- Stretch: `Qwen/Qwen3.5-4B` on two GPUs only after the 2B run is stable.
+## AutoDL bring-up
 
-## Safe bring-up order
+Choose one 48 GB card such as an RTX A6000, A40, or L40S. Put both the repository and runtime under
+AutoDL's persistent data-disk directory rather than a small system disk. In the commands below,
+replace both paths with the actual directories shown by the instance.
 
-1. Create a Python 3.12 environment.
-2. Run `scripts/bootstrap_ragen.sh` in a disposable workspace.
-3. Run `scripts/check_ragen_compat.sh`; do not ignore its old-vLLM warning.
-4. Build a Qwen3.5-capable verl/vLLM environment, then install RAGEN with `--no-deps`.
-5. Verify plain inference and chat templating for Qwen3.5 before starting RL.
-6. Run standard GRPO for five Sokoban updates with probes disabled.
-7. Run five updates for each scheduler with `budget=1`.
-8. Inspect token masks and replay-state mismatch rate.
-9. Only then raise the budget to 2 and start WebShop setup.
+```bash
+cd /path/to/ProbeGRPO
+bash scripts/check_gpu_host.sh /path/to/persistent-workspace
+bash scripts/bootstrap_verl.sh /path/to/persistent-workspace/probegrpo-runtime
+bash scripts/check_verl_stack.sh /path/to/persistent-workspace/probegrpo-runtime/verl
+```
 
-Do not pin speculative package versions in a public README before the GPU host verifies them. Record
-the successful lockfile or container digest under `experiments/environment/` after validation.
+The bootstrap is intentionally pinned. It records the ProbeGRPO commit, verl commit, uv version, and
+creation time in `runtime_manifest.txt`. If setup fails, keep the full command output; do not upgrade
+individual torch, Transformers, vLLM, or verl packages in place.
 
-## Five-update acceptance checklist
+The bootstrap resolves the lock once and creates `verl/.venv`. Later commands use that environment's
+absolute Python path, including for Ray workers, so an accidental ambient Conda environment cannot
+silently change the training stack.
 
-- no NaN/Inf in loss, reward, entropy, log-probabilities, or probe deltas;
-- exactly four main trajectories per group;
-- probe budget never exceeds configured `B`;
-- replay-state mismatch rate below 1% on deterministic Sokoban;
-- `budget=0` advantages match standard GRPO within floating-point tolerance;
-- total extra rollout tokens and wall-clock time are logged;
-- a checkpoint can resume for at least one additional update.
+If Hugging Face access is slow, configure a trusted mirror explicitly in the shell before running
+the scripts. Never write an access token into this repository or a command-line argument saved in
+shell history.
 
-## Qwen3.5-specific checks
+## Five-update standard GRPO gate
 
-- Confirm the installed Transformers version recognizes `Qwen3_5ForConditionalGeneration`.
-- Confirm vLLM can serve the model and return token log probabilities.
-- Keep text-only observations for Sokoban/WebShop even though Qwen3.5 is multimodal.
-- Save the exact chat template; turn masks depend on its assistant delimiters.
-- Validate LoRA target discovery before using `all-linear`, especially around Gated DeltaNet layers.
+The first paid GPU run is deliberately not agentic. It checks Qwen3.5 model loading, vLLM rollout,
+FSDP2 LoRA updates, GRPO grouping (`K=4`), checkpointing, and the exact software lock before adding
+Sokoban or probes.
 
+```bash
+cd /path/to/ProbeGRPO
+bash scripts/run_verl_grpo_smoke.sh \
+  /path/to/persistent-workspace/probegrpo-runtime/verl
+```
+
+Defaults:
+
+- two GSM8K prompts per update and four rollouts per prompt;
+- LoRA rank 32, alpha 64, `all-linear` target discovery;
+- prompt/response limits of 256 tokens;
+- optimizer and parameter offload;
+- five training updates and a checkpoint at step 5;
+- console-only logging and no W&B login.
+
+To verify resume, rerun against the same output directory:
+
+```bash
+TOTAL_TRAINING_STEPS=6 bash scripts/run_verl_grpo_smoke.sh \
+  /path/to/persistent-workspace/probegrpo-runtime/verl
+```
+
+The second command must resume from step 5 and perform exactly one additional update.
+
+## Acceptance checklist
+
+- `check_gpu_host.sh` and `check_verl_stack.sh` pass without overrides.
+- Qwen3.5 resolves as model type `qwen3_5`.
+- Five updates complete without NaN, Inf, CUDA OOM, Ray worker death, or tokenizer mismatch.
+- Each prompt produces exactly four rollout samples.
+- A step-5 checkpoint exists and resumes for step 6.
+- The log contains reward, response length, actor loss, rollout time, and update time.
+- Peak GPU memory and total wall-clock time are recorded in `experiments/environment/` before the
+  instance is stopped.
+
+Only after this gate passes should the project implement and run the Sokoban AgentLoop, followed by
+the deterministic replay/probe hook.

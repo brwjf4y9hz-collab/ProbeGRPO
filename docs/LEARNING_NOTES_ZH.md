@@ -24,6 +24,41 @@
 - Tiny Sokoban smoke test 证明的是软件逻辑，不是模型效果。
 - Qwen3.5 配置存在不等于旧版 RAGEN 依赖已经兼容。
 
+因此训练栈采用当前 verl 的固定 commit 和 `uv.lock`；RAGEN 只作为 Sokoban/WebShop 环境
+实现的参考。先用 GSM8K 跑五个标准 GRPO update，是为了把模型、vLLM、LoRA、FSDP2、
+checkpoint 与恢复训练单独验证，再引入多轮环境和反事实 probe。
+
+## 五个核心模块的个人理解
+
+- `replay.py`：根据相同 task、seed 和历史 action prefix，确定性重建当前 turn 之前的
+  环境状态。状态被序列化并计算 SHA-256，防止把环境漂移误认为动作贡献。
+- `probing.py`：从同一个 anchor 状态出发，分别执行事实动作和替代动作，再计算
+  `delta = factual_reward - counterfactual_reward`。
+- `pipeline.py`：调度 anchor、运行 probe，并用 `trajectory_to_sample` 把轨迹 ID 映射到
+  trainer batch 的行号。
+- `advantage.py`：把 probe 得到的 reward delta 标准化为局部 credit，只加到对应
+  assistant turn 的 token 上。
+- `schedulers.py`：决定有限 probe 预算应该花在哪些 turn 上；LinearUCB 同时考虑预测价值
+  和探索不确定性。
+
+这些解释放在学习笔记而非生产源码中，使代码保持英文和标准格式，同时保留自己的理解。
+
+## CPU 数据桥
+
+`rollout.py` 把框架无关的 `TrajectoryTrace` 转成 `TurnRecord`。其中 `action_prefix` 只包含
+当前动作之前的动作，因为 probe 必须先回到“做当前决策之前”的状态。
+
+`batching.py` 把稀疏 `ProbeCredit` 打包为：
+
+```text
+probe_turn_masks  [N, A, T]
+probe_deltas      [N, A]
+probe_valid       [N, A]
+```
+
+`N` 是 batch 轨迹数，`A` 是每条轨迹的 anchor slot 数，`T` 是 padding 后 token 数。
+turn mask 的作用是保证局部 credit 不会传播到提示词、其他 turn 或其他轨迹。
+
 ## 建议的项目展示顺序
 
 1. 先展示失败轨迹和 GRPO 的粗粒度 advantage。
@@ -31,4 +66,3 @@
 3. 展示 delta 只写入对应 assistant turn 的 token mask。
 4. 对比 random、entropy、LinearUCB 在相同额外 token 预算下选中的 anchor。
 5. 最后展示 WebShop 成功率、成本和失败案例，而不是只展示最好的一条轨迹。
-

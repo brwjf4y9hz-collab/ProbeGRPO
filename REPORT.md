@@ -15,7 +15,7 @@ Do not add novelty or performance claims until the corresponding experiment is c
 
 ## 2. System
 
-- RAGEN/verl rollout pipeline.
+- current verl rollout pipeline with RAGEN-derived task environments.
 - Qwen3.5-2B LoRA policy.
 - deterministic replay and state verification;
 - scheduler, prober, advantage integration, and metrics.
@@ -43,4 +43,3 @@ values, rollout-token cost, and GPU hours.
 
 Discuss environment determinism, cost, dependence on legal-action enumeration, small-model behavior,
 and the difference between local counterfactual effects and true long-term causal attribution.
-

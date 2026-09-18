@@ -7,7 +7,6 @@ from typing import Dict, Tuple
 from ..replay import ReplayableEnv, canonical_state_hash
 from ..types import ReplayState, RolloutOutcome
 
-
 Position = Tuple[int, int]
 
 
@@ -153,4 +152,3 @@ class TinySokobanSuffixPolicy:
 
 def _action_tokens(action: str) -> int:
     return max(1, len(action.split()))
-

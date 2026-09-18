@@ -23,7 +23,7 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
-ragen = ["torch>=2.4", "omegaconf>=2.3"]
+verl = ["torch>=2.4", "omegaconf>=2.3"]
 
 [project.scripts]
 probegrpo-smoke = "probegrpo.smoke:main"
@@ -40,5 +40,4 @@ line-length = 100
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
-
+select = ["E", "F", "I", "B"]
