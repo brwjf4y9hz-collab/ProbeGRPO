@@ -27,6 +27,9 @@ fi
 export PYTHONUNBUFFERED=1
 export RAY_TMPDIR="${RAY_TMPDIR:-$OUTPUT_DIR/ray}"
 export WANDB_MODE="${WANDB_MODE:-disabled}"
+export HF_HOME="${HF_HOME:-$VERL_DIR/data/huggingface}"
+export UV_CACHE_DIR="${UV_CACHE_DIR:-$(dirname "$VERL_DIR")/cache/uv}"
+mkdir -p "$HF_HOME" "$UV_CACHE_DIR"
 
 "$VERL_PYTHON" -m verl.trainer.main_ppo \
   algorithm.adv_estimator=grpo \

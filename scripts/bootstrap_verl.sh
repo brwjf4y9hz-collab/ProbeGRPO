@@ -17,9 +17,15 @@ if [[ -e "$RUNTIME_DIR" ]]; then
 fi
 
 mkdir -p "$RUNTIME_DIR"
-git clone --filter=blob:none --no-checkout https://github.com/verl-project/verl.git "$VERL_DIR"
+mkdir -p "$VERL_DIR"
+git -C "$VERL_DIR" init
+git -C "$VERL_DIR" remote add origin https://github.com/verl-project/verl.git
 git -C "$VERL_DIR" fetch --depth 1 origin "$VERL_COMMIT"
 git -C "$VERL_DIR" checkout --detach FETCH_HEAD
+
+# Keep the large wheel cache on the persistent data disk rather than AutoDL's 30 GB system disk.
+export UV_CACHE_DIR="${UV_CACHE_DIR:-$RUNTIME_DIR/cache/uv}"
+mkdir -p "$UV_CACHE_DIR"
 
 if command -v uv >/dev/null 2>&1; then
   UV_BIN="$(command -v uv)"
@@ -42,6 +48,7 @@ cat > "$RUNTIME_DIR/runtime_manifest.txt" <<EOF
 probegrpo_commit=$(git -C "$PROJECT_DIR" rev-parse HEAD)
 verl_commit=$(git -C "$VERL_DIR" rev-parse HEAD)
 uv=$($UV_BIN --version)
+uv_cache=$UV_CACHE_DIR
 created_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 

@@ -35,7 +35,8 @@ individual torch, Transformers, vLLM, or verl packages in place.
 
 The bootstrap resolves the lock once and creates `verl/.venv`. Later commands use that environment's
 absolute Python path, including for Ray workers, so an accidental ambient Conda environment cannot
-silently change the training stack.
+silently change the training stack. The git fetch downloads only the pinned commit, and uv/Hugging
+Face caches stay under the runtime data directory instead of AutoDL's small system disk.
 
 If Hugging Face access is slow, configure a trusted mirror explicitly in the shell before running
 the scripts. Never write an access token into this repository or a command-line argument saved in
