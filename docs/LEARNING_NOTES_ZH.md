@@ -66,3 +66,27 @@ turn mask 的作用是保证局部 credit 不会传播到提示词、其他 turn
 3. 展示 delta 只写入对应 assistant turn 的 token mask。
 4. 对比 random、entropy、LinearUCB 在相同额外 token 预算下选中的 anchor。
 5. 最后展示 WebShop 成功率、成本和失败案例，而不是只展示最好的一条轨迹。
+
+## GPU gate 后：从单轮回答到真实环境循环
+
+这次排查发现：固定版本 verl 会把 `ppo_mini_batch_size` 再乘以 `rollout.n`。
+2 道题各采样 4 次是 8 条真实轨迹；此前 mini-batch=8 要求对齐到 32，额外 24 条是
+loss mask 为零的 padding，并不是更多模型采样。现在 mini-batch=2。
+
+`agent_episode.py` 负责循环，`envs/sokoban.py` 负责游戏规则，
+`integration/sokoban_agent_loop.py` 负责与真实模型及 verl 对接。
+环境是三个手工二维关卡，接入验证通过后还需要扩展关卡，不能当成正式 benchmark。
+
+先运行 `make agent-smoke`。这是脚本动作，不会调用模型。它在同一个 episode 中先走 up，
+收到新棋盘，再走 up 把箱子推到目标。第二次动作的 prefix 是 `(up,)`。
+
+这里 T 不只是模型生成的 token 数：中间 observation 和模板边界也占 response 位置，
+但它们的 mask 必须是 0。最终一步成功时，记录的 anchor 状态仍然是执行动作前的非终止
+状态；`done_after=True` 不能被误用为排除该 anchor 的 `terminal=True`。
+
+小练习：运行演示，找到第二个 turn 的 token_indices。解释为什么它们没有紧挨着第一个
+turn 的 token_indices。然后把脚本动作从 `[up, up]` 改成 `[down, up]`，预测为什么第一个
+动作无效却仍然改变状态哈希。不要把测试里的虚构 entropy 当作模型真实不确定性。
+
+真实模型接口目前只提供采样 token 的 log-prob；它不等于分布 entropy。缺失统计量记录为
+null，后续从 actor 计算中获取后才能接回 entropy/LinearUCB scheduler。

@@ -42,13 +42,18 @@ fi
 
 cd "$VERL_DIR"
 "$UV_BIN" sync --frozen --all-packages --extra vllm --extra fsdp
+# The pinned lock selects NumPy 2.4.6, but mistral-common 1.11.3 requires <2.4
+# on this Python 3.12 runtime. Keep the upstream lock intact and record the override.
+"$UV_BIN" pip install --python "$VERL_DIR/.venv/bin/python" --no-deps 'numpy==2.3.5'
 "$UV_BIN" pip install --python "$VERL_DIR/.venv/bin/python" --no-deps -e "$PROJECT_DIR"
+"$UV_BIN" pip check --python "$VERL_DIR/.venv/bin/python"
 
 cat > "$RUNTIME_DIR/runtime_manifest.txt" <<EOF
 probegrpo_commit=$(git -C "$PROJECT_DIR" rev-parse HEAD)
 verl_commit=$(git -C "$VERL_DIR" rev-parse HEAD)
 uv=$($UV_BIN --version)
 uv_cache=$UV_CACHE_DIR
+runtime_override=numpy==2.3.5
 created_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 

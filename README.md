@@ -22,8 +22,14 @@ accounting.
 - A deterministic tiny Sokoban environment and a one-command CPU smoke test.
 - A pinned current-verl bootstrap and five-update `Qwen/Qwen3.5-2B` GRPO gate for one 48 GB GPU.
 
-The GPU scripts are ready, but the actual GPU run has not been executed yet. Sokoban and WebShop
-will reuse RAGEN's environment ideas while targeting verl's current `AgentLoop` interface.
+The operator has run five standard GRPO updates, restored step 5 into step 6, and verified a
+corrected one-update run with 8 trajectories and nonzero gradients. See the
+[GPU gate evidence](experiments/environment/2026-09-19-gpu-gate.md) for the differing configs,
+failures and evidence limits. This is not a ProbeGRPO performance result.
+
+A first current-verl Sokoban AgentLoop is implemented with a CPU-tested episode driver and
+three handcrafted 2D integration levels. Real model AgentLoop execution is pending. Run
+`make agent-smoke` locally, then follow [the AgentLoop runbook](docs/SOKOBAN_AGENTLOOP.md).
 
 ## Architecture
 
@@ -74,7 +80,8 @@ ProbeGRPO CPU data-flow smoke test passed
 
 The default model is [`Qwen/Qwen3.5-2B`](https://huggingface.co/Qwen/Qwen3.5-2B). RAGEN's released
 training dependencies are too old for this model, so ProbeGRPO pins a current verl revision and its
-frozen dependency lock. On an AutoDL Linux instance with one 48 GB NVIDIA GPU:
+frozen dependency lock plus an explicit NumPy 2.3.5 compatibility override. On an AutoDL Linux
+instance with one 48 GB NVIDIA GPU:
 
 ```bash
 bash scripts/check_gpu_host.sh /path/to/persistent-workspace

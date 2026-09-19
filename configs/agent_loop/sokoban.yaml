@@ -1,0 +1,2 @@
+- name: probegrpo_sokoban
+  _target_: probegrpo.integration.sokoban_agent_loop.SokobanAgentLoop
