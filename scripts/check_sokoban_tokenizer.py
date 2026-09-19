@@ -6,6 +6,7 @@ This is an integration check, not model-generated success evidence.
 
 import asyncio
 import json
+import os
 import tempfile
 from types import SimpleNamespace
 
@@ -56,6 +57,14 @@ async def main():
             extra_info={"task_id": "push-up", "env_seed": 17},
         )
         episode = json.loads(output.extra_fields["probegrpo_episode_json"])
+        if os.environ.get("PROBEGRPO_DEBUG_PROBE") == "1":
+            probe = episode["debug_probe"]
+            assert probe["advantage_applied"] is False
+            assert probe["scheduler"] == "random_debug"
+            print(
+                f"Scripted paired-probe check: delta={probe['delta']}, "
+                f"skip={probe['skipped_reason']}"
+            )
         turns = episode["turns"]
         assert len(turns) == 2 and output.reward_score == 1.0
         assert len(output.response_mask) == len(output.response_ids)

@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import random
 import time
+from dataclasses import asdict
 from pathlib import Path
 
 from verl.experimental.agent_loop.agent_loop import AgentLoopBase, AgentLoopOutput
 
 from probegrpo.agent_episode import GeneratedAction, TokenStream, run_episode
 from probegrpo.envs.sokoban import SokobanEnv
+from probegrpo.episode_probing import probe_episode
 
 
 class VerlTokenIO:
@@ -98,6 +102,12 @@ class SokobanAgentLoop(AgentLoopBase):
             response_budget=int(self.rollout_config.response_length),
         )
         payload = episode.as_dict()
+        # A narrow integration gate: one randomly chosen probe in session 0 of each
+        # prompt group. Its result is logged, never used to alter GRPO advantages.
+        if os.environ.get("PROBEGRPO_DEBUG_PROBE") == "1" and int(kwargs.get("session_id", 0)) == 0:
+            payload["debug_probe"] = await self._debug_probe(
+                episode, sampling_params, priority, trajectory_id
+            )
         # Standard verl JSONL omits custom extra_fields. Keep a separate per-episode sidecar.
         step = int(kwargs.get("global_steps", 0))
         root = Path(self.config.trainer.rollout_data_dir) / "episodes" / f"step-{step}"
@@ -122,3 +132,50 @@ class SokobanAgentLoop(AgentLoopBase):
                 "response_token_count": response_length,
             },
         )
+
+    async def _debug_probe(self, episode, sampling_params, priority, trajectory_id):
+        seed = int.from_bytes(hashlib.sha256(trajectory_id.encode()).digest()[:4], "big")
+        rng = random.Random(seed)
+        candidates = [
+            index
+            for index, turn in enumerate(episode.turns)
+            if turn.action in turn.legal_actions and len(set(turn.legal_actions)) >= 2
+        ]
+        if not candidates:
+            return {"skipped_reason": "no_eligible_anchor", "delta": 0.0}
+        anchor_turn_id = rng.choice(candidates)
+        turn = episode.turns[anchor_turn_id]
+        alternatives = sorted(set(turn.legal_actions) - {turn.action})
+        alternative_action = rng.choice(alternatives)
+        token_ids = tuple(self.tokenizer.encode(alternative_action, add_special_tokens=False))
+        if self.tokenizer.eos_token_id is not None:
+            token_ids += (int(self.tokenizer.eos_token_id),)
+        alternative = GeneratedAction(
+            token_ids, alternative_action, (0.0,) * len(token_ids)
+        )
+
+        def io_factory(sampling_seed, branch_name):
+            return VerlTokenIO(
+                self,
+                {**sampling_params, "seed": sampling_seed},
+                f"{trajectory_id}:probe:{branch_name}",
+                priority,
+            )
+
+        result = await probe_episode(
+            episode,
+            anchor_turn_id,
+            alternative,
+            env_factory=lambda: SokobanEnv(max_steps=episode.max_horizon),
+            io_factory=io_factory,
+            sampling_seed=seed,
+            response_budget=int(self.rollout_config.response_length),
+            timeout_seconds=float(os.environ.get("PROBEGRPO_PROBE_TIMEOUT_S", "180")),
+        )
+        return {
+            **asdict(result),
+            "anchor_turn_id": anchor_turn_id,
+            "scheduler": "random_debug",
+            "sampling_seed": seed,
+            "advantage_applied": False,
+        }

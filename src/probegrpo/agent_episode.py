@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import asdict, dataclass
-from typing import Optional, Tuple
+from typing import Mapping, Optional, Tuple
 
 from .envs.sokoban import ACTIONS, initial_messages, observation_message
 from .rollout import RawAssistantTurn, TrajectoryTrace
@@ -76,6 +76,8 @@ class EpisodeTurn:
     token_indices: Tuple[int, ...]
     reward: float
     done_after: bool
+    generated_token_ids: Tuple[int, ...] = ()
+    generated_logprobs: Optional[Tuple[float, ...]] = None
 
 
 @dataclass(frozen=True)
@@ -139,6 +141,7 @@ async def run_episode(
     max_turns: int = 8,
     response_budget: int = 2048,
     action_token_limit: int = 32,
+    scripted_actions: Optional[Mapping[int, GeneratedAction]] = None,
 ) -> Episode:
     """Run a real environment with an injected async model/tokenization interface.
 
@@ -164,7 +167,14 @@ async def run_episode(
         if room <= 0:
             reason = "token_budget"
             break
-        generated = await io.generate(stream, min(action_token_limit, room))
+        turn_id = len(turns)
+        limit = min(action_token_limit, room)
+        if scripted_actions is not None and turn_id in scripted_actions:
+            generated = scripted_actions[turn_id]
+            if len(generated.token_ids) > limit:
+                raise ValueError("Scripted action exceeds the generation limit")
+        else:
+            generated = await io.generate(stream, limit)
         if not generated.token_ids:
             reason = "empty_generation"
             break
@@ -190,6 +200,8 @@ async def run_episode(
                 token_indices=indices,
                 reward=next_state.reward,
                 done_after=next_state.terminal,
+                generated_token_ids=generated.token_ids,
+                generated_logprobs=generated.logprobs,
             )
         )
         prefix.append(action)
