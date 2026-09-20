@@ -137,9 +137,10 @@ loading Qwen weights:
 ```
 
 The script verifies exact GRPO fallback for `budget=0` and `lambda=0`, then prints changed token
-indices for `lambda=0.5`. The configured z-score uses all valid deltas. For the saved pair
-`[1.0, 0.0]`, their standardized values are `[1.0, -1.0]`; the zero-delta anchor therefore gets
-negative *relative* credit. This is the current formula, not a measured training benefit.
+indices for `lambda=0.5`. Probe deltas are now scaled by `max(1, largest absolute valid delta)`
+in the batch, without mean-centering. For `[1.0, 0.0]`, normalized values are `[1.0, 0.0]`: a zero-delta
+anchor receives no credit. The first GPU update on 2026-09-20 used the earlier centered z-score
+and changed four tokens; it is a wiring gate, not a result comparable with future experiments.
 
 For the one-update training gate, install the idempotent hook in the pinned external checkout and
 run with a new output directory:

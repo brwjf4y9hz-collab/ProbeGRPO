@@ -19,7 +19,9 @@ training dependency stack.
 6. Both branches use the same suffix sampling seed and return a `ProbeResult`.
 7. The scheduler observes `abs(delta) / additional_rollout_tokens`.
 8. Sparse credits are packed into `[batch, anchors, tokens]` masks and aligned delta/valid matrices.
-9. `blend_probe_advantages` standardizes valid deltas and adds them only at selected token indices.
+9. `blend_probe_advantages` divides valid deltas by `max(1, largest absolute valid delta)`,
+   preserving zero and sign without amplifying small differences, and adds them only at selected
+   token indices.
 
 ## Public contracts
 
@@ -72,7 +74,8 @@ updates or 200 valid probes use position-stratified random selection.
 - prefix replay error: skip and retain the error class in `skipped_reason`;
 - state mismatch: skip when strict mode is enabled;
 - no valid probe deltas: return the original GRPO advantage;
-- equal probe deltas: add zero relative credit;
+- zero probe delta: add no credit to that anchor, even when another delta is nonzero;
+- all-zero probe deltas: retain standard GRPO advantages;
 - budget zero: exactly recover GRPO.
 
 ## Current implementation boundary

@@ -17,27 +17,35 @@ class ProbeCredit:
     valid: bool = True
 
 
-def standardize_probe_deltas(
+def normalize_probe_deltas(
     deltas: Sequence[float],
     epsilon: float = 1e-8,
 ) -> List[float]:
-    """Standardize deltas without producing NaNs for tiny batches.
+    """Bound valid deltas to [-1, 1] without amplifying small differences.
 
-    A single probe maps to its sign so the ``budget=1`` ablation remains meaningful. Two or more
-    identical deltas map to zero because they contain no relative credit information.
+    Use the larger of one reward unit and the largest absolute valid delta as the scale.
+    Unlike a centered z-score, a zero reward difference always gives zero credit.
     """
 
     if not deltas:
         return []
-    if len(deltas) == 1:
-        value = float(deltas[0])
-        return [0.0 if abs(value) <= epsilon else math.copysign(1.0, value)]
-    mean = sum(float(value) for value in deltas) / len(deltas)
-    variance = sum((float(value) - mean) ** 2 for value in deltas) / len(deltas)
-    std = math.sqrt(variance)
-    if std <= epsilon:
+    values = [float(value) for value in deltas]
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("probe deltas must be finite")
+    largest = max(abs(value) for value in values)
+    if largest <= epsilon:
         return [0.0] * len(deltas)
-    return [(float(value) - mean) / std for value in deltas]
+    scale = max(1.0, largest)
+    return [value / scale for value in values]
+
+
+def standardize_probe_deltas(
+    deltas: Sequence[float],
+    epsilon: float = 1e-8,
+) -> List[float]:
+    """Compatibility alias for the zero-preserving normalization."""
+
+    return normalize_probe_deltas(deltas, epsilon=epsilon)
 
 
 def blend_probe_advantages(
@@ -45,7 +53,7 @@ def blend_probe_advantages(
     credits: Iterable[ProbeCredit],
     lambda_coef: float = 0.5,
 ) -> List[List[float]]:
-    """Add standardized local credit only to explicitly selected token positions."""
+    """Add normalized local credit only to explicitly selected token positions."""
     if lambda_coef < 0:
         raise ValueError("lambda_coef must be non-negative")
     result = [list(map(float, row)) for row in base_advantages]
@@ -53,8 +61,8 @@ def blend_probe_advantages(
     if not valid_credits or lambda_coef == 0:
         return result
 
-    normalized = standardize_probe_deltas([credit.delta for credit in valid_credits])
-    for credit, delta_z in zip(valid_credits, normalized):
+    normalized = normalize_probe_deltas([credit.delta for credit in valid_credits])
+    for credit, scaled_delta in zip(valid_credits, normalized):
         if not 0 <= credit.sample_index < len(result):
             raise IndexError(f"sample index out of range: {credit.sample_index}")
         row = result[credit.sample_index]
@@ -63,5 +71,5 @@ def blend_probe_advantages(
                 raise IndexError(
                     f"token index {token_index} out of range for sample {credit.sample_index}"
                 )
-            row[token_index] += lambda_coef * delta_z
+            row[token_index] += lambda_coef * scaled_delta
     return result

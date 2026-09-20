@@ -90,9 +90,10 @@ class VerlV1SidecarTest(unittest.TestCase):
             data, ["first_0_0", "second_0_0"],
             sidecar_dir=self.directory, budget=1, lambda_coef=0.5,
         )
-        expected = torch.tensor([[0.5, 0.0, 1.0, 0.0], [-0.3, -0.3, 0.0, 0.0]])
+        expected = torch.tensor([[0.5, 0.0, 1.0, 0.0], [0.2, 0.2, 0.0, 0.0]])
         self.assertTrue(torch.allclose(data.batch["advantages"], expected))
-        self.assertEqual(metrics["probe/changed_tokens"], 3)
+        self.assertEqual(metrics["probe/changed_tokens"], 1)
+        self.assertEqual(metrics["probe/credit_abs_sum"], 0.5)
         self.assertEqual(data.batch["probe_turn_masks"].shape, (2, 1, 4))
 
     def test_lambda_zero_keeps_original_tensor(self):

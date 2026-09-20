@@ -101,7 +101,9 @@ The ProbeGRPO integration adapter expects the trainer batch to contain:
 - `probe_deltas`: `[batch, anchors]`
 - `probe_valid`: `[batch, anchors]`
 
-It standardizes valid deltas and adds `lambda * delta_z * turn_mask` to the base advantages.
+It divides valid deltas by `max(1, largest absolute valid delta)` in the batch and adds
+`lambda * normalized_delta * turn_mask` to the base advantages. A zero factual-minus-
+counterfactual reward difference always adds zero credit.
 
 ## Project milestones
 

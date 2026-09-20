@@ -1,6 +1,11 @@
 """ProbeGRPO's framework-independent public API."""
 
-from .advantage import ProbeCredit, blend_probe_advantages, standardize_probe_deltas
+from .advantage import (
+    ProbeCredit,
+    blend_probe_advantages,
+    normalize_probe_deltas,
+    standardize_probe_deltas,
+)
 from .batching import PackedProbeBatch, blend_packed_probe_advantages, pack_probe_credits
 from .pipeline import ProbeBatchOutcome, ProbePipeline
 from .probing import CounterfactualProber, SuffixPolicy
@@ -33,6 +38,7 @@ __all__ = [
     "extract_turn_records",
     "pack_probe_credits",
     "standardize_probe_deltas",
+    "normalize_probe_deltas",
 ]
 
 __version__ = "0.1.0"

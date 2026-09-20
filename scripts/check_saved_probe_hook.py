@@ -46,11 +46,20 @@ def main() -> None:
     print(f"N={len(episodes)} A=1 T={token_count}")
     print("budget=0 and lambda=0 exactly preserve GRPO: True")
     print(f"metrics: {metrics}")
+    zero_delta_anchors = 0
     for index, episode in enumerate(episodes):
         changed = torch.nonzero(trained.batch["advantages"][index], as_tuple=True)[0].tolist()
+        probe = episode.get("debug_probe")
+        if probe and not probe.get("skipped_reason"):
+            anchor = episode["turns"][probe["anchor_turn_id"]]["token_indices"]
+            assert set(changed).issubset(anchor), "credit escaped the selected assistant turn"
+            if float(probe["delta"]) == 0.0:
+                zero_delta_anchors += 1
+                assert not changed, "zero-delta anchor received nonzero credit"
         if changed:
             values = trained.batch["advantages"][index, changed].tolist()
             print(f'{episode["trajectory_id"]}: indices={changed} credit={values}')
+    print(f"zero-delta valid anchors unchanged: {zero_delta_anchors}")
 
 
 if __name__ == "__main__":
