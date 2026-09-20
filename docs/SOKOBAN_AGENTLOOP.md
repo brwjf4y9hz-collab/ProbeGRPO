@@ -37,8 +37,8 @@ as null. `Episode.to_trace(...)` requires explicit actor statistics aligned to t
 the CPU demo supplies labelled synthetic statistics only. Do not feed placeholder zeros into the
 entropy/LinearUCB scheduler. An optional random-anchor debug gate now generates paired
 factual/counterfactual suffixes with the same sampling seed. It records the result in the episode
-sidecar but **does not apply credit to GRPO advantages**. Group-wide scheduling, measured
-entropy/LinearUCB and the trainer advantage hook remain future work.
+sidecar but **does not apply credit to GRPO advantages**. Group-wide scheduling and measured
+entropy/LinearUCB remain future work. A separate trainer hook now awaits a GPU training gate.
 
 ## Run in order
 
@@ -82,7 +82,7 @@ rewards. Solving a fixture is useful but not guaranteed by a pretrained model. E
 still yield zero GRPO advantages. The 2026-09-19 remote smoke completed one real Qwen/verl GRPO
 update, wrote 8 sidecars and passed the replay/mask inspector for all 8. One of eight fixture
 episodes succeeded. This is an integration check, not a held-out benchmark or a ProbeGRPO
-improvement result. The paid GPU paired-probe gate has not yet been run.
+improvement result.
 
 ## Paired-suffix debug gate (next paid-GPU check)
 
@@ -109,9 +109,47 @@ python3 scripts/inspect_sokoban_probes.py \
   outputs/verl-sokoban-probe-smoke/rollouts/episodes/step-1
 ```
 
+The 2026-09-19 paid GPU gate produced eight episodes and two valid probes, with deltas 1.0 and
+0.0 and 304 extra response tokens. It did not apply probe credit to the actor update.
 The smoke records at most one probe for session 0 of each training prompt group. An invalid
 action, replay/context mismatch, or suffix failure produces zero credit with a skip reason.
 The inspector reports attempted/valid/skipped probes and valid-probe token cost. Failed attempts
 currently report zero tokens even if generation began, so they cannot yet support a rigorous
 total-cost claim. No training-benefit claim is justified until the trainer advantage hook and
 matched-budget baselines are tested.
+
+## Trainer advantage gate
+
+The pinned verl v1 trainer calculates standard GRPO advantages and then writes them back to
+TransferQueue as nested tensors. The ProbeGRPO hook runs between those two operations. It joins
+each batch row to its hashed episode sidecar using the trajectory ID, checks the full response
+mask, packs valid probe credit into `[N,A,T]` and `[N,A]` tensors, and changes only the selected
+assistant turn. Missing or mismatched sidecars stop the update instead of assigning credit to an
+unrelated episode. The first gate supports one TransferQueue span per episode and `budget=1`.
+
+After syncing the branch, validate the saved real episodes with the installed runtime without
+loading Qwen weights:
+
+```bash
+/root/autodl-tmp/probegrpo-runtime/verl/.venv/bin/python \
+  scripts/check_saved_probe_hook.py \
+  outputs/verl-sokoban-probe-smoke-882ea33-run2/rollouts/episodes/step-1
+```
+
+The script verifies exact GRPO fallback for `budget=0` and `lambda=0`, then prints changed token
+indices for `lambda=0.5`. The configured z-score uses all valid deltas. For the saved pair
+`[1.0, 0.0]`, their standardized values are `[1.0, -1.0]`; the zero-delta anchor therefore gets
+negative *relative* credit. This is the current formula, not a measured training benefit.
+
+For the one-update training gate, install the idempotent hook in the pinned external checkout and
+run with a new output directory:
+
+```bash
+export OUTPUT_DIR=/root/autodl-tmp/ProbeGRPO/outputs/verl-sokoban-probe-train-smoke-1
+bash scripts/run_verl_sokoban_probe_train_smoke.sh \
+  /root/autodl-tmp/probegrpo-runtime/verl
+```
+
+The installer checks the exact verl commit and keeps the original trainer in a neighboring
+`.py.probegrpo.backup` file. Training logs must show `probe/valid`, `probe/changed_tokens`, and
+`probe/credit_abs_sum`; a completed optimizer step alone does not establish that credit was used.
