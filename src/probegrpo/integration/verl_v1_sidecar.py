@@ -112,8 +112,14 @@ def apply_sidecar_probe_credits(
 
     if lambda_coef < 0:
         raise ValueError("probe lambda must be non-negative")
-    if budget == 0 or lambda_coef == 0:
-        return data, {"probe/valid": 0, "probe/skipped": 0, "probe/extra_tokens": 0}
+    if budget == 0:
+        return data, {
+            "probe/valid": 0,
+            "probe/skipped": 0,
+            "probe/extra_tokens": 0,
+            "probe/changed_tokens": 0,
+            "probe/credit_abs_sum": 0.0,
+        }
 
     try:
         import torch
@@ -131,6 +137,10 @@ def apply_sidecar_probe_credits(
         token_count=advantages.shape[1],
         budget=budget,
     )
+    if lambda_coef == 0:
+        metrics["probe/changed_tokens"] = 0
+        metrics["probe/credit_abs_sum"] = 0.0
+        return data, metrics
     device = advantages.device
     data.batch["probe_turn_masks"] = torch.tensor(
         packed.probe_turn_masks, dtype=torch.bool, device=device

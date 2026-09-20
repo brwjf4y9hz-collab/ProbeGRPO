@@ -84,7 +84,7 @@ update, wrote 8 sidecars and passed the replay/mask inspector for all 8. One of 
 episodes succeeded. This is an integration check, not a held-out benchmark or a ProbeGRPO
 improvement result.
 
-## Paired-suffix debug gate (next paid-GPU check)
+## Paired-suffix debug gate
 
 First sync the local branch to AutoDL. Before loading model weights, run the scripted tokenizer
 check with the probe switch enabled. This exercises the same pair orchestration but uses scripted
@@ -125,7 +125,7 @@ TransferQueue as nested tensors. The ProbeGRPO hook runs between those two opera
 each batch row to its hashed episode sidecar using the trajectory ID, checks the full response
 mask, packs valid probe credit into `[N,A,T]` and `[N,A]` tensors, and changes only the selected
 assistant turn. Missing or mismatched sidecars stop the update instead of assigning credit to an
-unrelated episode. The first gate supports one TransferQueue span per episode and `budget=1`.
+unrelated episode. The first gate supports one TransferQueue span per episode and `budget=0/1`.
 
 After syncing the branch, validate the saved real episodes with the installed runtime without
 loading Qwen weights:
@@ -154,3 +154,31 @@ bash scripts/run_verl_sokoban_probe_train_smoke.sh \
 The installer checks the exact verl commit and keeps the original trainer in a neighboring
 `.py.probegrpo.backup` file. Training logs must show `probe/valid`, `probe/changed_tokens`, and
 `probe/credit_abs_sum`; a completed optimizer step alone does not establish that credit was used.
+
+## Configurable B=0 versus B=1 control gate
+
+The AgentLoop now reads `probe.enabled`, `probe.budget`, and `probe.scheduler` before model
+generation. `budget=0` triggers no paired suffixes and exactly retains GRPO advantages;
+`budget=1, scheduler=random` probes only session zero of each four-trajectory prompt group.
+Setting `lambda_coef=0` retains GRPO advantages but still runs and counts any configured probes;
+it is therefore not a zero-cost baseline.
+The older `PROBEGRPO_DEBUG_PROBE=1` path remains a rollout-only diagnostic when training probe
+config is absent. Unsupported `budget>1` and non-random schedulers raise an error instead of
+silently running a different experiment.
+
+Both scripts below install the same pinned trainer hook, use the same Sokoban fixtures and
+training defaults, and require a distinct `OUTPUT_DIR` per run. They are **one-update wiring
+checks**, not a success-rate comparison:
+
+```bash
+export OUTPUT_DIR=/root/autodl-tmp/ProbeGRPO/outputs/sokoban-grpo-control-1
+bash scripts/run_verl_sokoban_grpo_control.sh /root/autodl-tmp/probegrpo-runtime/verl
+
+export OUTPUT_DIR=/root/autodl-tmp/ProbeGRPO/outputs/sokoban-random-probe-1
+bash scripts/run_verl_sokoban_probe_train_smoke.sh /root/autodl-tmp/probegrpo-runtime/verl
+```
+
+The baseline should report zero probe attempts and zero changed tokens. The random arm should
+report at most one attempt per prompt group, with credit confined to its chosen assistant turn.
+Actual entropy and top-two margins are not yet recorded, so entropy and LinearUCB are not
+valid training arms at this gate. The fixture dataset is not a benchmark.

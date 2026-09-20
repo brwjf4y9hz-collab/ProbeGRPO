@@ -11,7 +11,9 @@ shift
 export DATA_DIR="${DATA_DIR:-$VERL_DIR/data/probegrpo-sokoban-fixtures}"
 export OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/outputs/verl-sokoban-smoke}"
 export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1}"
-export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+# Ray may otherwise assign zero OMP threads to a fractional-CPU vLLM actor.
+export OMP_NUM_THREADS=1
+OMP_OVERRIDE='+ray_kwargs.ray_init.runtime_env.env_vars.OMP_NUM_THREADS="1"'
 
 "$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/prepare_sokoban_data.py" \
   --output-dir "$DATA_DIR"
@@ -28,4 +30,5 @@ bash "$PROJECT_DIR/scripts/run_verl_grpo_smoke.sh" "$VERL_DIR" \
   actor_rollout_ref.rollout.agent.num_workers=1 \
   actor_rollout_ref.rollout.agent.default_agent_loop=probegrpo_sokoban \
   actor_rollout_ref.rollout.agent.agent_loop_config_path="$PROJECT_DIR/configs/agent_loop/sokoban.yaml" \
+  "$OMP_OVERRIDE" \
   "$@"

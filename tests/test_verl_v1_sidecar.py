@@ -101,12 +101,26 @@ class VerlV1SidecarTest(unittest.TestCase):
             import torch
         except ImportError:
             self.skipTest("PyTorch is installed only in the verl runtime")
-        base = torch.tensor([[0.5, 0.0]])
-        data = SimpleNamespace(batch={"advantages": base, "response_mask": torch.tensor([[1, 0]])})
-        data, _ = apply_sidecar_probe_credits(
-            data, ["missing_0_0"], sidecar_dir=self.directory, lambda_coef=0,
+        write_episode(self.directory, "first_0", [1], [0], 1.0)
+        base = torch.tensor([[0.5]])
+        data = SimpleNamespace(batch={"advantages": base, "response_mask": torch.tensor([[1]])})
+        data, metrics = apply_sidecar_probe_credits(
+            data, ["first_0_0"], sidecar_dir=self.directory, lambda_coef=0,
         )
         self.assertIs(data.batch["advantages"], base)
+        self.assertEqual(metrics["probe/valid"], 1)
+        self.assertEqual(metrics["probe/extra_tokens"], 12)
+        self.assertEqual(metrics["probe/changed_tokens"], 0)
+
+    def test_budget_zero_reports_no_probe_cost(self):
+        base = object()
+        data = SimpleNamespace(batch={"advantages": base})
+        result, metrics = apply_sidecar_probe_credits(
+            data, ["missing_0_0"], sidecar_dir=self.directory, budget=0,
+        )
+        self.assertIs(result.batch["advantages"], base)
+        self.assertEqual(metrics["probe/extra_tokens"], 0)
+        self.assertEqual(metrics["probe/changed_tokens"], 0)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,11 @@
 
 Use seeds `17`, `42`, and `101`. Tune on seed `17`; freeze all choices before running the other two.
 
+Current trainer integration supports only a wiring pilot: `grpo` with `budget=0` versus a
+`random_b1` arm that probes one anchor in session zero of each prompt group. The `random_b2`,
+`entropy_b2`, and `linear_ucb_b2` rows above remain planned, not runnable results. Do not label
+the tiny Sokoban fixtures as a benchmark or infer performance from one update.
+
 ## Required metadata
 
 Every run records:

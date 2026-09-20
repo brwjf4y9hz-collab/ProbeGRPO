@@ -1,4 +1,4 @@
-"""Summarize the optional paired-suffix AgentLoop debug gate."""
+"""Summarize paired-suffix AgentLoop sidecars before the actor update."""
 
 import argparse
 import json
@@ -24,12 +24,10 @@ def main():
             f"anchor={probe.get('anchor_id', 'none')} "
             f"{probe.get('factual_action', '?')} -> {probe.get('counterfactual_action', '?')} "
             f"delta={probe['delta']} extra_tokens={probe.get('additional_rollout_tokens', 0)} "
-            f"applied={probe.get('advantage_applied', False)}"
+            f"credit_requested={probe.get('credit_requested', False)}"
         )
-    if not probes:
-        raise SystemExit("Debug probe gate was not enabled or did not run")
     if any(probe.get("advantage_applied") for probe in probes):
-        raise SystemExit("Debug probe must not modify the GRPO advantage")
+        raise SystemExit("Rollout sidecar cannot report credit applied before the actor update")
 
 
 if __name__ == "__main__":

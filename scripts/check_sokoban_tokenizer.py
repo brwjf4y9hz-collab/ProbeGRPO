@@ -82,6 +82,26 @@ async def main():
             f"Real Qwen CT tokenizer check passed: turns=2, "
             f"response_tokens={len(output.response_ids)}, assistant_tokens={len(owned)}"
         )
+        config.probe = {"enabled": True, "budget": 0, "scheduler": "random"}
+        baseline = await agent.run(
+            {}, uid="tokenizer-budget-zero", session_id=0, global_steps=0,
+            extra_info={"task_id": "push-up", "env_seed": 17},
+        )
+        assert "debug_probe" not in json.loads(baseline.extra_fields["probegrpo_episode_json"])
+
+        config.probe.budget = 1
+        random_probe = await agent.run(
+            {}, uid="tokenizer-random", session_id=0, global_steps=0,
+            extra_info={"task_id": "push-up", "env_seed": 17},
+        )
+        probe = json.loads(random_probe.extra_fields["probegrpo_episode_json"])["debug_probe"]
+        assert probe["scheduler"] == "random" and probe["credit_requested"] is True
+        other_session = await agent.run(
+            {}, uid="tokenizer-random", session_id=1, global_steps=0,
+            extra_info={"task_id": "push-up", "env_seed": 17},
+        )
+        assert "debug_probe" not in json.loads(other_session.extra_fields["probegrpo_episode_json"])
+        print("Probe mode check passed: budget=0 makes no probe; budget=1 probes session 0 only")
         print("Actions and logprobs were scripted; no model rollout was executed.")
 
 

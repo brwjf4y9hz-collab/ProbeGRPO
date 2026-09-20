@@ -15,6 +15,7 @@ from verl.experimental.agent_loop.agent_loop import AgentLoopBase, AgentLoopOutp
 from probegrpo.agent_episode import GeneratedAction, TokenStream, run_episode
 from probegrpo.envs.sokoban import SokobanEnv
 from probegrpo.episode_probing import probe_episode
+from probegrpo.probe_mode import resolve_probe_mode
 
 
 class VerlTokenIO:
@@ -91,6 +92,11 @@ class SokobanAgentLoop(AgentLoopBase):
         task_id, seed = str(info["task_id"]), int(info["env_seed"])
         trajectory_id = f"{kwargs['uid']}_{kwargs.get('session_id', 0)}"
         max_turns = int(info.get("max_turns", 8))
+        mode = resolve_probe_mode(
+            self.config.get("probe", {}),
+            session_id=int(kwargs.get("session_id", 0)),
+            debug_probe=os.environ.get("PROBEGRPO_DEBUG_PROBE") == "1",
+        )
         io = VerlTokenIO(self, sampling_params, trajectory_id, priority)
         episode = await run_episode(
             io,
@@ -102,12 +108,14 @@ class SokobanAgentLoop(AgentLoopBase):
             response_budget=int(self.rollout_config.response_length),
         )
         payload = episode.as_dict()
-        # A narrow integration gate: one randomly chosen probe in session 0 of each
-        # prompt group. Its result is logged, never used to alter GRPO advantages.
-        if os.environ.get("PROBEGRPO_DEBUG_PROBE") == "1" and int(kwargs.get("session_id", 0)) == 0:
-            payload["debug_probe"] = await self._debug_probe(
-                episode, sampling_params, priority, trajectory_id
-            )
+        # A narrow training gate: at most one random anchor in session zero.
+        # The trainer decides whether to apply its credit after standard GRPO.
+        if mode.run_probe:
+            probe = await self._random_probe(episode, sampling_params, priority, trajectory_id)
+            probe["scheduler"] = mode.scheduler
+            probe["credit_requested"] = mode.credit_requested
+            probe["advantage_applied"] = False  # The actor update has not happened yet.
+            payload["debug_probe"] = probe
         # Standard verl JSONL omits custom extra_fields. Keep a separate per-episode sidecar.
         step = int(kwargs.get("global_steps", 0))
         root = Path(self.config.trainer.rollout_data_dir) / "episodes" / f"step-{step}"
@@ -133,7 +141,7 @@ class SokobanAgentLoop(AgentLoopBase):
             },
         )
 
-    async def _debug_probe(self, episode, sampling_params, priority, trajectory_id):
+    async def _random_probe(self, episode, sampling_params, priority, trajectory_id):
         seed = int.from_bytes(hashlib.sha256(trajectory_id.encode()).digest()[:4], "big")
         rng = random.Random(seed)
         candidates = [
@@ -175,7 +183,5 @@ class SokobanAgentLoop(AgentLoopBase):
         return {
             **asdict(result),
             "anchor_turn_id": anchor_turn_id,
-            "scheduler": "random_debug",
             "sampling_seed": seed,
-            "advantage_applied": False,
         }
