@@ -56,6 +56,11 @@ bash scripts/run_sokoban_ablation.sh /root/autodl-tmp/probegrpo-runtime/verl mai
 The runner refuses reused output directories, records code/data revisions, and creates
 `summary.json` plus `summary.md` after all arms complete.
 
+Operational failures and their fixes are retained in dated records. See
+[`environment/2026-09-21-public-ablation-incidents.md`](environment/2026-09-21-public-ablation-incidents.md)
+for the first public-data run, including network, CUDA memory, colocated initialization, and
+synthetic-padding incidents.
+
 ## Result policy
 
 Store machine-readable records in ignored `outputs/*.jsonl`. Commit only redacted summaries,
