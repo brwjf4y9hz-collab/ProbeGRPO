@@ -12,6 +12,7 @@ PHASE="${2:-main}"
 SEED="${SEED:-17}"
 RUN_TAG="${RUN_TAG:-$(git -C "$PROJECT_DIR" rev-parse --short HEAD)}"
 ROOT_OUTPUT="${ROOT_OUTPUT:-$PROJECT_DIR/outputs/ablation-${RUN_TAG}-seed${SEED}}"
+EXPECTED_FINAL_STEP="${TOTAL_TRAINING_STEPS:-50}"
 
 case "$PHASE" in
   main)
@@ -43,6 +44,10 @@ esac
 for specification in "${ARMS[@]}"; do
   IFS=: read -r method budget scheduler lambda_coef <<<"$specification"
   output="$ROOT_OUTPUT/$method"
+  if [[ -d "$output/rollouts/episodes/step-$EXPECTED_FINAL_STEP" ]]; then
+    echo "==> $method already completed step $EXPECTED_FINAL_STEP; skipping"
+    continue
+  fi
   echo "==> $method (budget=$budget scheduler=$scheduler lambda=$lambda_coef)"
   METHOD="$method" \
   SEED="$SEED" \

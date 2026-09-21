@@ -76,7 +76,7 @@ bash "$PROJECT_DIR/scripts/run_verl_sokoban_smoke.sh" "$VERL_DIR" \
   data.max_response_length=1024 \
   data.shuffle=true \
   data.seed="$SEED" \
-  actor_rollout_ref.actor.ppo_mini_batch_size=8 \
+  actor_rollout_ref.actor.ppo_mini_batch_size=4 \
   actor_rollout_ref.actor.ppo_max_token_len_per_gpu=2048 \
   actor_rollout_ref.actor.entropy_from_logits_with_chunking=true \
   actor_rollout_ref.actor.entropy_from_logits_chunk_size=256 \
