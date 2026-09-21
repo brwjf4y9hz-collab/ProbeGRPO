@@ -82,6 +82,7 @@ bash "$PROJECT_DIR/scripts/run_verl_sokoban_smoke.sh" "$VERL_DIR" \
   actor_rollout_ref.actor.entropy_from_logits_chunk_size=256 \
   actor_rollout_ref.rollout.response_length=1024 \
   actor_rollout_ref.rollout.max_num_batched_tokens=2048 \
+  actor_rollout_ref.rollout.gpu_memory_utilization=0.25 \
   actor_rollout_ref.rollout.seed="$SEED" \
   +probe.enabled=true \
   +probe.budget="$PROBE_BUDGET" \
