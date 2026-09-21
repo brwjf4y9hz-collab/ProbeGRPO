@@ -6,15 +6,21 @@
 |---|---|---:|---|
 | `grpo` | standard GRPO | 0 | none |
 | `random_b2` | matched-cost control | 2 | stratified random |
-| `entropy_b2` | heuristic | 2 | turn entropy |
+| `surprisal_b2` | uncertainty heuristic | 2 | chosen-token surprisal |
 | `linear_ucb_b2` | ProbeGRPO | 2 | learned value per rollout token |
 
 Use seeds `17`, `42`, and `101`. Tune on seed `17`; freeze all choices before running the other two.
 
-Current trainer integration supports only a wiring pilot: `grpo` with `budget=0` versus a
-`random_b1` arm that probes one anchor in session zero of each prompt group. The `random_b2`,
-`entropy_b2`, and `linear_ucb_b2` rows above remain planned, not runnable results. Do not label
-the tiny Sokoban fixtures as a benchmark or infer performance from one update.
+All four rows are runnable on the pinned current-verl stack. Formal runs use the checksum-verified
+public RAGEN Sokoban release, a deterministic 512/128 board-deduplicated split with zero layout
+overlap, and a 12-turn horizon verified against an exact shortest-path oracle. Tiny handcrafted
+levels remain wiring fixtures and never enter result tables.
+
+The backend exposes sampled action-token log probabilities but not the full next-token
+distribution. Therefore `surprisal_b2` is named and logged as chosen-token surprisal rather than
+being mislabeled as entropy. LinearUCB uses that rollout-available uncertainty statistic. Budget
+`B` currently probes the first `B` of four episodes in each prompt group and performs turn
+selection within each episode; group-wide top-B selection is future work.
 
 ## Required metadata
 
@@ -26,7 +32,8 @@ Every run records:
 - CUDA, driver, torch, transformers, vLLM, verl, and PEFT versions;
 - seed and environment split;
 - main/probe rollout tokens and GPU hours;
-- success, reward, steps, invalid actions, entropy, advantage variance, and replay mismatch rate.
+- success, reward, steps, invalid actions, chosen-token surprisal, advantage statistics, and
+  replay mismatch rate.
 
 ## Ablations
 
@@ -35,10 +42,19 @@ Run only after the main pipeline is stable:
 - budget: `1`, `2`, `4`;
 - lambda: `0.25`, `0.5`, `1.0`;
 - token mask: whole assistant turn versus parsed action span;
-- scheduler: random, entropy, LinearUCB.
+- scheduler: random, chosen-token surprisal, LinearUCB.
 
 Do not multiply every setting by three seeds. Select the configuration on one seed, then evaluate the
 frozen winner and baselines on all three seeds.
+
+Run seed 17 first:
+
+```bash
+bash scripts/run_sokoban_ablation.sh /root/autodl-tmp/probegrpo-runtime/verl main
+```
+
+The runner refuses reused output directories, records code/data revisions, and creates
+`summary.json` plus `summary.md` after all arms complete.
 
 ## Result policy
 

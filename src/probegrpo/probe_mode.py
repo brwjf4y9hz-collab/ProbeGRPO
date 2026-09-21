@@ -1,9 +1,4 @@
-"""Decide whether one AgentLoop session should spend rollout tokens on a probe.
-
-The current trainer gate supports one random anchor in session zero of a prompt
-group. Unsupported budgets or schedulers fail early instead of silently running
-fewer probes than requested or mislabeling an experiment.
-"""
+"""Decide whether one AgentLoop session should spend rollout tokens on a probe."""
 
 from __future__ import annotations
 
@@ -16,6 +11,7 @@ class ProbeMode:
     run_probe: bool
     credit_requested: bool
     scheduler: str
+    group_budget: int = 0
 
 
 def resolve_probe_mode(
@@ -33,18 +29,20 @@ def resolve_probe_mode(
         raise ValueError("probe.enabled must be a boolean")
     if enabled:
         budget = settings.get("budget", 1)
-        if isinstance(budget, bool) or not isinstance(budget, int) or budget not in (0, 1):
-            raise ValueError("this trainer gate supports probe.budget=0 or 1 only")
+        if isinstance(budget, bool) or not isinstance(budget, int) or not 0 <= budget <= 4:
+            raise ValueError("probe.budget must be an integer in [0, 4]")
         scheduler = settings.get("scheduler", "random")
-        if scheduler != "random":
-            raise ValueError("this trainer gate supports probe.scheduler=random only")
+        if scheduler not in {"random", "surprisal", "linear_ucb"}:
+            raise ValueError("probe.scheduler must be random, surprisal, or linear_ucb")
         return ProbeMode(
-            run_probe=budget == 1 and session_id == 0,
-            credit_requested=budget == 1,
-            scheduler="random",
+            run_probe=session_id < budget,
+            credit_requested=budget > 0,
+            scheduler=scheduler,
+            group_budget=budget,
         )
     return ProbeMode(
         run_probe=debug_probe and session_id == 0,
         credit_requested=False,
         scheduler="random_debug" if debug_probe else "none",
+        group_budget=1 if debug_probe else 0,
     )

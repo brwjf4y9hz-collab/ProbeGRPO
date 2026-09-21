@@ -31,6 +31,18 @@ class ProbeModeTest(unittest.TestCase):
         self.assertTrue(all(mode.credit_requested for mode in modes))
         self.assertTrue(all(mode.scheduler == "random" for mode in modes))
 
+    def test_budget_two_runs_first_two_sessions_for_supported_schedulers(self):
+        for scheduler in ("random", "surprisal", "linear_ucb"):
+            modes = [
+                resolve_probe_mode(
+                    {"enabled": True, "budget": 2, "scheduler": scheduler},
+                    session_id=index,
+                )
+                for index in range(4)
+            ]
+            self.assertEqual([mode.run_probe for mode in modes], [True, True, False, False])
+            self.assertTrue(all(mode.group_budget == 2 for mode in modes))
+
     def test_debug_probe_preserves_rollout_only_gate(self):
         mode = resolve_probe_mode({}, session_id=0, debug_probe=True)
         self.assertTrue(mode.run_probe)
@@ -39,7 +51,7 @@ class ProbeModeTest(unittest.TestCase):
 
     def test_unsupported_budget_and_scheduler_fail_before_generation(self):
         for settings in (
-            {"enabled": True, "budget": 2},
+            {"enabled": True, "budget": 5},
             {"enabled": True, "budget": -1},
             {"enabled": True, "budget": 1.0},
             {"enabled": True, "scheduler": "entropy"},

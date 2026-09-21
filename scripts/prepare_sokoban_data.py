@@ -1,4 +1,4 @@
-"""Create tiny fixture parquet files using the existing verl runtime's datasets package."""
+"""Create tiny Sokoban fixture parquet files for integration smoke tests."""
 
 import argparse
 from pathlib import Path

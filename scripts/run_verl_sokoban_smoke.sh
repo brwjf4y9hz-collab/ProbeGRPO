@@ -15,8 +15,10 @@ export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1}"
 export OMP_NUM_THREADS=1
 OMP_OVERRIDE='+ray_kwargs.ray_init.runtime_env.env_vars.OMP_NUM_THREADS="1"'
 
-"$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/prepare_sokoban_data.py" \
-  --output-dir "$DATA_DIR"
+if [[ ! -f "$DATA_DIR/train.parquet" || ! -f "$DATA_DIR/test.parquet" ]]; then
+  "$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/prepare_sokoban_data.py" \
+    --output-dir "$DATA_DIR"
+fi
 bash "$PROJECT_DIR/scripts/run_verl_grpo_smoke.sh" "$VERL_DIR" \
   trainer.resume_mode=disable \
   trainer.save_freq=-1 \

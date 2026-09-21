@@ -34,7 +34,14 @@ def pack_sidecar_probes(
     if budget == 0:
         return (
             pack_probe_credits([], len(batch_keys), token_count, 0),
-            {"probe/valid": 0, "probe/skipped": 0, "probe/extra_tokens": 0},
+            {
+                "probe/attempted": 0,
+                "probe/valid": 0,
+                "probe/failed": 0,
+                "probe/skipped": 0,
+                "probe/unselected": len(batch_keys),
+                "probe/extra_tokens": 0,
+            },
         )
 
     trajectory_ids = [key.rsplit("_", 1)[0] for key in batch_keys]
@@ -42,7 +49,7 @@ def pack_sidecar_probes(
         raise ValueError("ProbeGRPO v1 hook does not support multi-span episodes")
 
     credits: list[ProbeCredit] = []
-    skipped = extra_tokens = 0
+    attempted = failed = unselected = extra_tokens = 0
     for sample_index, trajectory_id in enumerate(trajectory_ids):
         filename = hashlib.sha256(trajectory_id.encode()).hexdigest() + ".json"
         path = sidecar_dir / filename
@@ -63,8 +70,16 @@ def pack_sidecar_probes(
             raise ValueError(f"response mask mismatch for {trajectory_id}")
 
         probe = episode.get("debug_probe")
-        if not probe or probe.get("skipped_reason"):
-            skipped += 1
+        if not probe:
+            unselected += 1
+            continue
+        attempted += 1
+        cost = int(probe.get("additional_rollout_tokens", 0))
+        if cost < 0:
+            raise ValueError(f"negative probe token cost for {trajectory_id}")
+        extra_tokens += cost
+        if probe.get("skipped_reason"):
+            failed += 1
             continue
         anchor_turn_id = probe["anchor_turn_id"]
         turns = episode["turns"]
@@ -86,16 +101,15 @@ def pack_sidecar_probes(
         delta = float(probe["delta"])
         if not math.isfinite(delta):
             raise ValueError(f"non-finite probe delta for {trajectory_id}")
-        cost = int(probe["additional_rollout_tokens"])
-        if cost < 0:
-            raise ValueError(f"negative probe token cost for {trajectory_id}")
-        extra_tokens += cost
         credits.append(ProbeCredit(sample_index, indices, delta))
 
     packed = pack_probe_credits(credits, len(batch_keys), token_count, budget)
     return packed, {
+        "probe/attempted": attempted,
         "probe/valid": len(credits),
-        "probe/skipped": skipped,
+        "probe/failed": failed,
+        "probe/skipped": failed,
+        "probe/unselected": unselected,
         "probe/extra_tokens": extra_tokens,
     }
 
@@ -114,8 +128,11 @@ def apply_sidecar_probe_credits(
         raise ValueError("probe lambda must be non-negative")
     if budget == 0:
         return data, {
+            "probe/attempted": 0,
             "probe/valid": 0,
+            "probe/failed": 0,
             "probe/skipped": 0,
+            "probe/unselected": len(batch_keys),
             "probe/extra_tokens": 0,
             "probe/changed_tokens": 0,
             "probe/credit_abs_sum": 0.0,

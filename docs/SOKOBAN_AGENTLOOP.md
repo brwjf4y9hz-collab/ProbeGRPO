@@ -7,6 +7,13 @@ levels. These are **integration fixtures**, not RAGEN's benchmark, procedural le
 generalization study. Two levels are train fixtures; one is held out for later checks.
 `TinySokobanEnv` remains the independent micro-test for the probing core.
 
+Formal experiments use the public `ZihanWang314/ragen-datasets` Sokoban parquet files pinned at
+revision `e2060cf7c51da891a68e0e7437309e5ec052e45b`. The preparation script verifies both source
+checksums, translates the released boards into replayable task IDs, keeps the lowest 512 unique
+train layouts and 128 unique test layouts, and excludes every test board duplicated in train.
+All selected one-box boards have an exact shortest solution of at most 11 moves, below the fixed
+12-turn horizon. The environment uses sparse terminal success reward consistently for every arm.
+
 The episode driver is dependency-free. The optional `SokobanAgentLoop` subclasses the pinned
 verl `AgentLoopBase`, uses its Continuous Token methods, calls its model server once per action,
 and returns `AgentLoopOutput` with environment-derived `reward_score`. No LLM judge is involved.
@@ -32,13 +39,11 @@ the step count changes, so the full-state hash changes. Episodes stop on success
 horizon, token budget, or empty generation. No action is executed after its tokens were truncated.
 
 Sampled token logprobs are available when the backend supplies them. Full-distribution entropy and
-top-two margin are **not** exposed by this adapter's backend contract. Episode JSON records those
-as null. `Episode.to_trace(...)` requires explicit actor statistics aligned to the response axis;
-the CPU demo supplies labelled synthetic statistics only. Do not feed placeholder zeros into the
-entropy/LinearUCB scheduler. An optional random-anchor debug gate now generates paired
-factual/counterfactual suffixes with the same sampling seed. It records the result in the episode
-sidecar but **does not apply credit to GRPO advantages**. Group-wide scheduling and measured
-entropy/LinearUCB remain future work. A separate trainer hook now awaits a GPU training gate.
+top-two margin are **not** exposed by this adapter's backend contract, so the runnable uncertainty
+baseline is explicitly named chosen-token surprisal. LinearUCB uses the same available surprisal
+feature and records that provenance; it does not pretend that surprisal is full entropy. Random,
+surprisal, and LinearUCB can select one turn inside each probed episode. The trainer hook has been
+validated in a real one-update GPU gate and applies credit after standard GRPO advantage calculation.
 
 ## Run in order
 
@@ -113,10 +118,8 @@ The 2026-09-19 paid GPU gate produced eight episodes and two valid probes, with 
 0.0 and 304 extra response tokens. It did not apply probe credit to the actor update.
 The smoke records at most one probe for session 0 of each training prompt group. An invalid
 action, replay/context mismatch, or suffix failure produces zero credit with a skip reason.
-The inspector reports attempted/valid/skipped probes and valid-probe token cost. Failed attempts
-currently report zero tokens even if generation began, so they cannot yet support a rigorous
-total-cost claim. No training-benefit claim is justified until the trainer advantage hook and
-matched-budget baselines are tested.
+The formal adapter counts actual model-generated tokens for both successful and failed branches.
+No training-benefit claim is justified until the matched-budget public-data runs are complete.
 
 ## Trainer advantage gate
 
@@ -125,7 +128,7 @@ TransferQueue as nested tensors. The ProbeGRPO hook runs between those two opera
 each batch row to its hashed episode sidecar using the trajectory ID, checks the full response
 mask, packs valid probe credit into `[N,A,T]` and `[N,A]` tensors, and changes only the selected
 assistant turn. Missing or mismatched sidecars stop the update instead of assigning credit to an
-unrelated episode. The first gate supports one TransferQueue span per episode and `budget=0/1`.
+unrelated episode. The hook supports one TransferQueue span per episode and `budget=0..4`.
 
 After syncing the branch, validate the saved real episodes with the installed runtime without
 loading Qwen weights:
@@ -155,30 +158,27 @@ The installer checks the exact verl commit and keeps the original trainer in a n
 `.py.probegrpo.backup` file. Training logs must show `probe/valid`, `probe/changed_tokens`, and
 `probe/credit_abs_sum`; a completed optimizer step alone does not establish that credit was used.
 
-## Configurable B=0 versus B=1 control gate
+## Public-data matched-budget experiments
 
-The AgentLoop now reads `probe.enabled`, `probe.budget`, and `probe.scheduler` before model
-generation. `budget=0` triggers no paired suffixes and exactly retains GRPO advantages;
-`budget=1, scheduler=random` probes only session zero of each four-trajectory prompt group.
+The AgentLoop reads `probe.enabled`, `probe.budget`, and `probe.scheduler` before model generation.
+`budget=0` triggers no paired suffixes and exactly retains GRPO advantages. With four sampled
+episodes per prompt, `budget=B` probes sessions `[0, B)`, and the configured scheduler selects one
+turn inside each selected episode.
 Setting `lambda_coef=0` retains GRPO advantages but still runs and counts any configured probes;
 it is therefore not a zero-cost baseline.
 The older `PROBEGRPO_DEBUG_PROBE=1` path remains a rollout-only diagnostic when training probe
-config is absent. Unsupported `budget>1` and non-random schedulers raise an error instead of
-silently running a different experiment.
+config is absent. This is not yet group-wide top-B selection across all four trajectories, and that
+limitation must remain explicit in reports.
 
-Both scripts below install the same pinned trainer hook, use the same Sokoban fixtures and
-training defaults, and require a distinct `OUTPUT_DIR` per run. They are **one-update wiring
-checks**, not a success-rate comparison:
+The formal runner downloads and verifies the public release, writes a run manifest, refuses to mix
+an existing output directory, and runs the four main arms sequentially:
 
 ```bash
-export OUTPUT_DIR=/root/autodl-tmp/ProbeGRPO/outputs/sokoban-grpo-control-1
-bash scripts/run_verl_sokoban_grpo_control.sh /root/autodl-tmp/probegrpo-runtime/verl
-
-export OUTPUT_DIR=/root/autodl-tmp/ProbeGRPO/outputs/sokoban-random-probe-1
-bash scripts/run_verl_sokoban_probe_train_smoke.sh /root/autodl-tmp/probegrpo-runtime/verl
+bash scripts/run_sokoban_ablation.sh \
+  /root/autodl-tmp/probegrpo-runtime/verl main
 ```
 
-The baseline should report zero probe attempts and zero changed tokens. The random arm should
-report at most one attempt per prompt group, with credit confined to its chosen assistant turn.
-Actual entropy and top-two margins are not yet recorded, so entropy and LinearUCB are not
-valid training arms at this gate. The fixture dataset is not a benchmark.
+The first pass uses seed 17. It compares GRPO, Random-B2, Surprisal-B2, and LinearUCB-B2 with the
+same model, public split, main rollout count, horizon, and probe budget. The script writes
+`summary.json` and `summary.md`. Run the `lambda` and `budget` phases only after the main pass is
+stable; freeze the chosen configuration before repeating with seeds 42 and 101.

@@ -15,11 +15,11 @@ accounting.
 
 - A framework-independent `ReplayableEnv` contract with deterministic prefix replay and state hashes.
 - Structured `TurnRecord`, `Anchor`, `ProbeResult`, and experiment metrics types.
-- Random, entropy, and online LinearUCB anchor schedulers.
+- Random, chosen-token-surprisal, and online LinearUCB anchor schedulers.
 - Paired factual/counterfactual suffix probing with strict replay validation.
 - Probe-aware GRPO advantage shaping with exact assistant-turn token masks.
 - A lazy torch/verl adapter that keeps the core package dependency-free.
-- A deterministic tiny Sokoban environment and a one-command CPU smoke test.
+- A deterministic Sokoban environment, public RAGEN data adapter, and one-command CPU smoke test.
 - A pinned current-verl bootstrap and five-update `Qwen/Qwen3.5-2B` GRPO gate for one 48 GB GPU.
 
 The operator has run five standard GRPO updates, restored step 5 into step 6, and verified a
@@ -27,9 +27,11 @@ corrected one-update run with 8 trajectories and nonzero gradients. See the
 [GPU gate evidence](experiments/environment/2026-09-19-gpu-gate.md) for the differing configs,
 failures and evidence limits. This is not a ProbeGRPO performance result.
 
-A first current-verl Sokoban AgentLoop is implemented with a CPU-tested episode driver and
-three handcrafted 2D integration levels. Real model AgentLoop execution is pending. Run
-`make agent-smoke` locally, then follow [the AgentLoop runbook](docs/SOKOBAN_AGENTLOOP.md).
+A current-verl Sokoban AgentLoop has completed real Qwen rollouts and actor updates with and
+without probe credit. The three handcrafted levels remain smoke fixtures only. Formal experiments
+use an immutable public RAGEN release, deduplicate board layouts, remove train/test overlap, and
+record an exact shortest-path oracle for every selected board. Follow
+[the AgentLoop runbook](docs/SOKOBAN_AGENTLOOP.md).
 
 ## Architecture
 
@@ -111,12 +113,24 @@ counterfactual reward difference always adds zero credit.
 2. **GPU stack gate:** Qwen3.5-2B completes five standard GRPO updates and resumes on current verl.
 3. **Agent rollout:** a RAGEN-derived Sokoban task completes multi-turn current-verl `AgentLoop`
    rollouts and deterministic prefix replay.
-4. **Matched-budget comparison:** GRPO, random probe, entropy probe, and LinearUCB use identical
-   main-rollout and probe budgets.
+4. **Matched-budget comparison:** GRPO, random probe, surprisal probe, and LinearUCB use identical
+   main-rollout and probe budgets on fixed public Sokoban splits.
 5. **Portfolio result:** publish curves, cost table, replayable WebShop traces, and a short demo.
 
 For an internship portfolio, a well-explained negative result is acceptable. Do not fabricate gains;
 report when extra probes improve credit diagnostics but fail to improve final reward.
+
+The first reproducible ablation is launched on one GPU with:
+
+```bash
+bash scripts/run_sokoban_ablation.sh /root/autodl-tmp/probegrpo-runtime/verl main
+```
+
+It runs seed 17 for `grpo`, `random_b2`, `surprisal_b2`, and `linear_ucb_b2`, then writes a JSON
+and Markdown result table. Only after this pilot is stable should the frozen comparison be repeated
+with seeds 42 and 101. The current budget implementation probes the first `B` of four sampled
+episodes in each prompt group and selects one turn inside each episode; it is not yet a group-wide
+top-B selector.
 
 ## Evaluation metrics
 

@@ -58,6 +58,41 @@ class VerlV1SidecarTest(unittest.TestCase):
         )
         self.assertEqual(packed.mask_shape, (1, 0, 2))
         self.assertEqual(metrics["probe/valid"], 0)
+        self.assertEqual(metrics["probe/unselected"], 1)
+
+    def test_distinguishes_unselected_and_failed_probes(self):
+        write_episode(self.directory, "first_0", [1], [0], 1.0)
+        second = {
+            "trajectory_id": "second_0",
+            "stream": {"response_mask": [1]},
+            "turns": [{"token_indices": [0]}],
+            "debug_probe": {
+                "skipped_reason": "timeout",
+                "delta": 0.0,
+                "additional_rollout_tokens": 7,
+            },
+        }
+        filename = hashlib.sha256(b"second_0").hexdigest() + ".json"
+        (self.directory / filename).write_text(json.dumps(second))
+        third = {
+            "trajectory_id": "third_0",
+            "stream": {"response_mask": [1]},
+            "turns": [{"token_indices": [0]}],
+        }
+        filename = hashlib.sha256(b"third_0").hexdigest() + ".json"
+        (self.directory / filename).write_text(json.dumps(third))
+        _, metrics = pack_sidecar_probes(
+            ["first_0_0", "second_0_0", "third_0_0"],
+            [[1], [1], [1]],
+            sidecar_dir=self.directory,
+            token_count=1,
+            budget=1,
+        )
+        self.assertEqual(metrics["probe/attempted"], 2)
+        self.assertEqual(metrics["probe/valid"], 1)
+        self.assertEqual(metrics["probe/failed"], 1)
+        self.assertEqual(metrics["probe/unselected"], 1)
+        self.assertEqual(metrics["probe/extra_tokens"], 19)
 
     def test_rejects_misaligned_mask_before_credit(self):
         write_episode(self.directory, "first_0", [1, 0, 1], [2], 1.0)

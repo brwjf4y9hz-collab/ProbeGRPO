@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..replay import ReplayableEnv, canonical_state_hash
 from ..types import ReplayState
+from .public_sokoban import decode_public_task
 
 LEVELS = {
     "push-up": ("#######", "#  .  #", "#  $  #", "#     #", "#  @  #", "#######"),
@@ -29,7 +30,7 @@ class SokobanEnv(ReplayableEnv):
         self._ready = False
 
     def reset(self, task_id: str, seed: int) -> ReplayState:
-        board = LEVELS[task_id]
+        board = LEVELS[task_id] if task_id in LEVELS else decode_public_task(task_id)
         self.task_id, self.seed = task_id, int(seed)
         self.board = board
         self.floor = {(r, c) for r, row in enumerate(board) for c, x in enumerate(row) if x != "#"}
