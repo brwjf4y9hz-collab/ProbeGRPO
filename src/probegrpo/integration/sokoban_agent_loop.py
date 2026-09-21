@@ -119,6 +119,13 @@ class SokobanAgentLoop(AgentLoopBase):
         payload = episode.as_dict()
         payload["dataset_split"] = str(info.get("split", "train"))
         payload["source_index"] = info.get("source_index")
+        payload["oracle_shortest_steps"] = info.get("oracle_shortest_steps")
+        payload["probe_config"] = {
+            "enabled": bool(probe_settings.get("enabled", False)),
+            "budget": int(probe_settings.get("budget", 0)),
+            "scheduler": str(probe_settings.get("scheduler", "none")),
+            "lambda_coef": float(probe_settings.get("lambda_coef", 0.0)),
+        }
         # The trainer applies saved credit after standard GRPO advantage calculation.
         if mode.run_probe:
             probe = await self._probe(

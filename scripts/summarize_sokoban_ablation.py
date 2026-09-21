@@ -59,6 +59,9 @@ def sidecar_metrics(run_dir: Path) -> dict[str, float | int | None]:
     result: dict[str, float | int | None] = {
         "final_val_step": None,
         "final_val_success": None,
+        "final_val_success_easy": None,
+        "final_val_success_medium": None,
+        "final_val_success_hard": None,
         "final_train_success": None,
         "main_generated_tokens": 0,
         "probe_extra_tokens": 0,
@@ -103,6 +106,16 @@ def sidecar_metrics(run_dir: Path) -> dict[str, float | int | None]:
         latest = validation_steps[latest_step]
         result["final_val_step"] = latest_step
         result["final_val_success"] = fmean(float(row["final_reward"]) for row in latest)
+        difficulty = {
+            "easy": [row for row in latest if int(row["oracle_shortest_steps"]) <= 2],
+            "medium": [row for row in latest if 3 <= int(row["oracle_shortest_steps"]) <= 5],
+            "hard": [row for row in latest if int(row["oracle_shortest_steps"]) >= 6],
+        }
+        for name, episodes in difficulty.items():
+            if episodes:
+                result[f"final_val_success_{name}"] = fmean(
+                    float(row["final_reward"]) for row in episodes
+                )
     return result
 
 

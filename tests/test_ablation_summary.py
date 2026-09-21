@@ -34,6 +34,7 @@ class AblationSummaryTest(unittest.TestCase):
             validation = {
                 "dataset_split": "test",
                 "final_reward": 0.0,
+                "oracle_shortest_steps": 6,
                 "turns": [],
             }
             (sidecars / "train.json").write_text(json.dumps(training))
@@ -47,6 +48,7 @@ class AblationSummaryTest(unittest.TestCase):
             self.assertEqual(row["probe_extra_tokens"], 10)
             self.assertEqual(row["main_generated_tokens"], 3)
             self.assertEqual(row["final_val_success"], 0.0)
+            self.assertEqual(row["final_val_success_hard"], 0.0)
             self.assertAlmostEqual(row["invalid_action_rate"], 0.5)
             self.assertAlmostEqual(row["gpu_hours"], 0.01)
 
