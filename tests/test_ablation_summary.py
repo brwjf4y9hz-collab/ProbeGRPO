@@ -17,6 +17,9 @@ class AblationSummaryTest(unittest.TestCase):
             logs = run / "logs"
             sidecars.mkdir(parents=True)
             logs.mkdir()
+            (run / "run_manifest.json").write_text(
+                json.dumps({"total_training_steps": 1})
+            )
             training = {
                 "dataset_split": "train",
                 "final_reward": 1.0,
@@ -51,6 +54,16 @@ class AblationSummaryTest(unittest.TestCase):
             self.assertEqual(row["final_val_success_hard"], 0.0)
             self.assertAlmostEqual(row["invalid_action_rate"], 0.5)
             self.assertAlmostEqual(row["gpu_hours"], 0.01)
+
+    def test_ignores_incomplete_and_failed_run_directories(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            failed = root / "random_b2.failed-padding"
+            failed.mkdir()
+            (failed / "run_manifest.json").write_text(
+                json.dumps({"total_training_steps": 50})
+            )
+            self.assertEqual(SUMMARIZE(root), [])
 
 
 if __name__ == "__main__":

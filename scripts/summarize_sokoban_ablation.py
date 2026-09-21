@@ -122,6 +122,13 @@ def sidecar_metrics(run_dir: Path) -> dict[str, float | int | None]:
 def summarize(root: Path) -> list[dict]:
     rows = []
     for run_dir in sorted(path for path in root.iterdir() if path.is_dir()):
+        manifest_path = run_dir / "run_manifest.json"
+        if not manifest_path.is_file():
+            continue
+        manifest = json.loads(manifest_path.read_text())
+        final_step = int(manifest["total_training_steps"])
+        if not (run_dir / "rollouts" / "episodes" / f"step-{final_step}").is_dir():
+            continue
         row = {"method": run_dir.name, **sidecar_metrics(run_dir), **log_metrics(run_dir)}
         main_tokens = int(row["main_generated_tokens"])
         probe_tokens = int(row["probe_extra_tokens"])

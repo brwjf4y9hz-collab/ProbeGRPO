@@ -82,3 +82,21 @@ completed GRPO arm to be retained while failed probe arms are rerun.
 - The failed Random-B2 directory is preserved with a `.failed-padding` suffix.
 - No improvement claim is allowed until all four matched-budget arms complete and the generated
   `summary.json`/`summary.md` are reviewed.
+
+## Seed 17 main-ablation result
+
+All four complete arms reached 50 updates. The incomplete `.failed-padding` run is excluded from
+the corrected summary.
+
+| method | final validation success | probe tokens | probe/main overhead | valid probes | GPU hours |
+|---|---:|---:|---:|---:|---:|
+| GRPO | 0.242 | 0 | 0.000 | 0/0 | 0.255 |
+| Random-B2 | 0.273 | 7,211 | 0.481 | 373/400 | 0.279 |
+| Surprisal-B2 | 0.273 | 8,602 | 0.576 | 376/400 | 0.287 |
+| LinearUCB-B2 | 0.312 | 7,814 | 0.519 | 376/400 | 0.283 |
+
+On this single seed, LinearUCB-B2 is 7.0 percentage points above GRPO and 3.9 points above the
+matched-budget Random-B2 baseline. This is promising engineering evidence, not a statistical
+claim. Random-B2 found more high-impact anchors per 1,000 probe tokens (`12.620`) than LinearUCB
+(`10.878`), so the current scheduler does not yet satisfy the planned anchor-efficiency claim.
+Repeat frozen configurations on seeds 42 and 101 before writing a resume improvement claim.
