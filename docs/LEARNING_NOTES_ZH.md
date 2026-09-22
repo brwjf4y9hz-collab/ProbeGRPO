@@ -17,16 +17,37 @@
 4. **为什么记录 rollout token 成本**：方法增加了采样，单看成功率会产生不公平比较；必须
    报告在相同训练/采样预算下的收益。
 
-## 当前阶段不要声称的内容
+## 当前实验结论应该怎样说
 
 - 不声称首次提出反事实 credit assignment。
-- 没跑完 GPU 实验前，不声称提升成功率。
 - Tiny Sokoban smoke test 证明的是软件逻辑，不是模型效果。
-- Qwen3.5 配置存在不等于旧版 RAGEN 依赖已经兼容。
+- 三个 seed 是简历级复现证据，不是统计显著性证明。
+- 不说 LinearUCB 的平均成功率最高：Surprisal 高 0.2 个百分点，但成本和方差也更高。
+- 不说 LinearUCB 找关键 anchor 的效率最高：Random 的 high-impact/1k token 指标更高。
+- 可以说 LinearUCB 的提升最稳定：三个 seed 分别比 GRPO 多成功 9、10、8 道题。
 
 因此训练栈采用当前 verl 的固定 commit 和 `uv.lock`；RAGEN 只作为 Sokoban/WebShop 环境
 实现的参考。先用 GSM8K 跑五个标准 GRPO update，是为了把模型、vLLM、LoRA、FSDP2、
 checkpoint 与恢复训练单独验证，再引入多轮环境和反事实 probe。
+
+## 三 seed 主结果怎么理解
+
+公开测试集有 128 道题。三 seed 的最终结果是：
+
+| 方法 | 平均成功率 | 相对 GRPO 的配对提升 | 额外 rollout token |
+|---|---:|---:|---:|
+| GRPO | 24.0% +/- 2.0% | - | 0% |
+| Random-B2 | 29.2% +/- 4.6% | +5.2 +/- 6.5 pp | 51.2% |
+| Surprisal-B2 | 31.2% +/- 3.4% | +7.3 +/- 4.3 pp | 57.3% |
+| LinearUCB-B2 | 31.0% +/- 1.2% | +7.0 +/- 0.8 pp | 51.7% |
+
+这里的 `+/-` 是三个 seed 的样本标准差。`paired uplift` 不是先算两个总体均值再随便相减，
+而是每个 seed 内先做 `Probe - GRPO`，再汇总三个差值。这样可以消除一部分 seed 难度差异。
+
+LinearUCB 的价值不是赢了每一项指标，而是三个 seed 都稳定提升。Random 在 seed 42 很强，
+在 seed 101 却与 GRPO 持平；这说明只看最好 seed 会得出错误结论。Surprisal 的平均成功率
+略高，但多用了约 5.6 个百分点的 rollout token。最诚实的结论是：反事实局部 credit 有
+正向信号，LinearUCB 在当前设置下给出了更稳定的收益/成本折中。
 
 ## 五个核心模块的个人理解
 
@@ -70,8 +91,9 @@ turn mask 的作用是保证局部 credit 不会传播到提示词、其他 turn
 ## GPU gate 后：从单轮回答到真实环境循环
 
 这次排查发现：固定版本 verl 会把 `ppo_mini_batch_size` 再乘以 `rollout.n`。
-2 道题各采样 4 次是 8 条真实轨迹；此前 mini-batch=8 要求对齐到 32，额外 24 条是
-loss mask 为零的 padding，并不是更多模型采样。现在 mini-batch=2。
+正式实验每步 4 道题各采样 4 次，共 16 条真实轨迹；此前 mini-batch=8 要求对齐到 32，
+额外行是 loss mask 为零的 padding，并不是更多模型采样。最终 `ppo_mini_batch_size=4`，
+正好对应 16 条真实轨迹。
 
 `agent_episode.py` 负责循环，`envs/sokoban.py` 负责游戏规则，
 `integration/sokoban_agent_loop.py` 负责与真实模型及 verl 对接。
@@ -88,5 +110,6 @@ loss mask 为零的 padding，并不是更多模型采样。现在 mini-batch=2�
 turn 的 token_indices。然后把脚本动作从 `[up, up]` 改成 `[down, up]`，预测为什么第一个
 动作无效却仍然改变状态哈希。不要把测试里的虚构 entropy 当作模型真实不确定性。
 
-真实模型接口目前只提供采样 token 的 log-prob；它不等于分布 entropy。缺失统计量记录为
-null，后续从 actor 计算中获取后才能接回 entropy/LinearUCB scheduler。
+真实 rollout 接口提供采样 token 的 log-prob；它不等于完整分布 entropy。因此正式基线
+命名为 chosen-token surprisal，LinearUCB 也只使用 rollout 可获得的该统计量，避免把实现
+能力说得比实际更强。

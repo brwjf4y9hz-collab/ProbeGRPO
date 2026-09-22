@@ -33,6 +33,29 @@ use an immutable public RAGEN release, deduplicate board layouts, remove train/t
 record an exact shortest-path oracle for every selected board. Follow
 [the AgentLoop runbook](docs/SOKOBAN_AGENTLOOP.md).
 
+## Main result
+
+The frozen public-Sokoban comparison completed 50 training updates for four methods and three
+seeds on `Qwen/Qwen3.5-2B`. Values are mean +/- sample standard deviation across seeds 17, 42, and
+101 on the same 128 held-out boards.
+
+| Method | Final success | Paired uplift vs GRPO | Extra rollout tokens |
+|---|---:|---:|---:|
+| GRPO | 24.0% +/- 2.0% | - | 0.0% |
+| Random-B2 | 29.2% +/- 4.6% | +5.2 +/- 6.5 pp | 51.2% |
+| Surprisal-B2 | 31.2% +/- 3.4% | +7.3 +/- 4.3 pp | 57.3% |
+| **LinearUCB-B2** | **31.0% +/- 1.2%** | **+7.0 +/- 0.8 pp** | **51.7%** |
+
+![Public Sokoban three-seed result](docs/assets/public_sokoban_main_v1.svg)
+
+LinearUCB improves over its matched GRPO run on all three seeds and has the lowest cross-seed
+variance among probe methods. Surprisal has a 0.2-point higher mean, too small relative to the
+observed seed variation to treat as a meaningful win, at greater rollout cost. Random finds more
+high-impact anchors per 1,000 probe tokens, so this
+result supports counterfactual turn credit and LinearUCB stability—not a claim that LinearUCB is
+the best anchor-efficiency scheduler. See the [full result record](experiments/results/public_sokoban_main_v1/README.md),
+including protocol deviations and evidence limits.
+
 ## Architecture
 
 ```text
@@ -113,24 +136,23 @@ counterfactual reward difference always adds zero credit.
 2. **GPU stack gate:** Qwen3.5-2B completes five standard GRPO updates and resumes on current verl.
 3. **Agent rollout:** a RAGEN-derived Sokoban task completes multi-turn current-verl `AgentLoop`
    rollouts and deterministic prefix replay.
-4. **Matched-budget comparison:** GRPO, random probe, surprisal probe, and LinearUCB use identical
-   main-rollout and probe budgets on fixed public Sokoban splits.
-5. **Portfolio result:** publish curves, cost table, replayable WebShop traces, and a short demo.
+4. **Matched-budget comparison:** completed GRPO, random, surprisal, and LinearUCB on three seeds.
+5. **Portfolio packaging:** result table and cost figure are complete; trajectory demo and optional
+   WebShop extension remain.
 
 For an internship portfolio, a well-explained negative result is acceptable. Do not fabricate gains;
 report when extra probes improve credit diagnostics but fail to improve final reward.
 
-The first reproducible ablation is launched on one GPU with:
+The reproducible ablation is launched on one GPU with:
 
 ```bash
 bash scripts/run_sokoban_ablation.sh /root/autodl-tmp/probegrpo-runtime/verl main
 ```
 
-It runs seed 17 for `grpo`, `random_b2`, `surprisal_b2`, and `linear_ucb_b2`, then writes a JSON
-and Markdown result table. Only after this pilot is stable should the frozen comparison be repeated
-with seeds 42 and 101. The current budget implementation probes the first `B` of four sampled
-episodes in each prompt group and selects one turn inside each episode; it is not yet a group-wide
-top-B selector.
+Set `SEED` to 17, 42, or 101. The runner writes JSON and Markdown per-seed tables. Run
+`make results` to reproduce the committed three-seed aggregation and SVG. The current budget
+implementation probes the first `B` of four sampled episodes in each prompt group and selects one
+turn inside each episode; it is not yet a group-wide top-B selector.
 
 ## Evaluation metrics
 
@@ -150,6 +172,7 @@ top-B selector.
 
 ## Resume bullet
 
-> Built ProbeGRPO, a Qwen3.5-based Agent-RL system on current verl with deterministic trajectory
-> replay, budget-aware counterfactual credit probing, turn-level advantage shaping, and matched-cost
-> evaluation on Sokoban and WebShop.
+> Built ProbeGRPO, a Qwen3.5 Agent-RL system on current verl with deterministic counterfactual
+> replay, budget-aware anchor scheduling, and turn-local advantage shaping; improved public
+> Sokoban success from 24.0% +/- 2.0% to 31.0% +/- 1.2% across three seeds while measuring a
+> 1.517x rollout-token cost.

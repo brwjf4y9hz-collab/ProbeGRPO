@@ -1,0 +1,98 @@
+[
+  {
+    "method": "grpo",
+    "label": "GRPO",
+    "seeds": [
+      17,
+      42,
+      101
+    ],
+    "success_by_seed": [
+      0.2421875,
+      0.21875,
+      0.2578125
+    ],
+    "success_mean": 0.23958333333333334,
+    "success_sample_sd": 0.019661027175184247,
+    "paired_uplift_pp_mean": 0.0,
+    "paired_uplift_pp_sample_sd": 0.0,
+    "probe_tokens_mean": 0.0,
+    "rollout_overhead_mean": 0.0,
+    "valid_probes": 0,
+    "probe_attempts": 0,
+    "high_impact_per_1k_mean": null,
+    "gpu_hours_mean": 0.231
+  },
+  {
+    "method": "random_b2",
+    "label": "Random-B2",
+    "seeds": [
+      17,
+      42,
+      101
+    ],
+    "success_by_seed": [
+      0.2734375,
+      0.34375,
+      0.2578125
+    ],
+    "success_mean": 0.2916666666666667,
+    "success_sample_sd": 0.04577707247720559,
+    "paired_uplift_pp_mean": 5.208333333333334,
+    "paired_uplift_pp_sample_sd": 6.505206248331665,
+    "probe_tokens_mean": 7791.333333333333,
+    "rollout_overhead_mean": 0.512,
+    "valid_probes": 1140,
+    "probe_attempts": 1200,
+    "high_impact_per_1k_mean": 11.932,
+    "gpu_hours_mean": 0.2803333333333333
+  },
+  {
+    "method": "surprisal_b2",
+    "label": "Surprisal-B2",
+    "seeds": [
+      17,
+      42,
+      101
+    ],
+    "success_by_seed": [
+      0.2734375,
+      0.3359375,
+      0.328125
+    ],
+    "success_mean": 0.3125,
+    "success_sample_sd": 0.034053897996411515,
+    "paired_uplift_pp_mean": 7.291666666666667,
+    "paired_uplift_pp_sample_sd": 4.302789490067267,
+    "probe_tokens_mean": 8642.333333333334,
+    "rollout_overhead_mean": 0.5726666666666667,
+    "valid_probes": 1142,
+    "probe_attempts": 1200,
+    "high_impact_per_1k_mean": 10.444666666666667,
+    "gpu_hours_mean": 0.286
+  },
+  {
+    "method": "linear_ucb_b2",
+    "label": "LinearUCB-B2",
+    "seeds": [
+      17,
+      42,
+      101
+    ],
+    "success_by_seed": [
+      0.3125,
+      0.296875,
+      0.3203125
+    ],
+    "success_mean": 0.3098958333333333,
+    "success_sample_sd": 0.011933790872280832,
+    "paired_uplift_pp_mean": 7.03125,
+    "paired_uplift_pp_sample_sd": 0.78125,
+    "probe_tokens_mean": 7836.0,
+    "rollout_overhead_mean": 0.5166666666666667,
+    "valid_probes": 1138,
+    "probe_attempts": 1200,
+    "high_impact_per_1k_mean": 11.324666666666667,
+    "gpu_hours_mean": 0.2843333333333333
+  }
+]

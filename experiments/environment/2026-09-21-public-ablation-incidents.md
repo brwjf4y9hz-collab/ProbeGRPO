@@ -100,3 +100,23 @@ matched-budget Random-B2 baseline. This is promising engineering evidence, not a
 claim. Random-B2 found more high-impact anchors per 1,000 probe tokens (`12.620`) than LinearUCB
 (`10.878`), so the current scheduler does not yet satisfy the planned anchor-efficiency claim.
 Repeat frozen configurations on seeds 42 and 101 before writing a resume improvement claim.
+
+## Three-seed completion — 2026-09-22
+
+Seeds 42 and 101 completed all four arms with the frozen public split. The generated aggregate is:
+
+| method | final success (mean +/- sample SD) | paired uplift vs GRPO | probe/main overhead |
+|---|---:|---:|---:|
+| GRPO | 24.0% +/- 2.0% | - | 0.0% |
+| Random-B2 | 29.2% +/- 4.6% | +5.2 +/- 6.5 pp | 51.2% |
+| Surprisal-B2 | 31.2% +/- 3.4% | +7.3 +/- 4.3 pp | 57.3% |
+| LinearUCB-B2 | 31.0% +/- 1.2% | +7.0 +/- 0.8 pp | 51.7% |
+
+LinearUCB improved over matched-seed GRPO on all three seeds. It is the most stable probe method,
+not the highest mean by a meaningful margin: Surprisal is 0.2 points higher and costs more. Random
+still leads the high-impact-anchor-per-1,000-token diagnostic, so scheduler-efficiency superiority
+is not claimed. Three seeds are reported descriptively; no significance test is asserted.
+
+Seed 17's retained GRPO arm predates the PPO mini-batch padding fix. Its synthetic padding rows had
+zero loss masks, but the configuration difference is retained as a caveat and should be removed by
+a single GRPO rerun before using the result for a paper-level claim.

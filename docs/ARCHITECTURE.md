@@ -60,7 +60,7 @@ The adapter computes the adjustment without modifying trajectory rewards or unre
 ## Scheduler behavior
 
 - `random`: matched-cost control.
-- `entropy`: cheap uncertainty heuristic.
+- `surprisal`: sampled-action uncertainty heuristic using chosen-token negative log probability.
 - `linear_ucb`: predicts useful credit per extra rollout token with uncertainty bonuses.
 
 LinearUCB uses seven bounded features: entropy, inverse log-probability margin, normalized turn
@@ -80,9 +80,11 @@ updates or 200 valid probes use position-stratified random selection.
 
 ## Current implementation boundary
 
-The core pipeline, framework-independent trace extraction, dense batch packing, and torch blending
-adapter are implemented and CPU-tested. The pinned current-verl GPU bootstrap and standard GRPO
-smoke scripts are implemented but still require an AutoDL run. After that gate passes, the next code
-boundary is a current-verl `AgentLoop` that adapts RAGEN's Sokoban behavior, converts rollout output
-into `TrajectoryTrace`, and routes factual/counterfactual suffixes through the same model server.
-See [GPU_RUNBOOK.md](GPU_RUNBOOK.md) before GPU installation.
+The core pipeline, current-verl v1 advantage hook, Qwen3.5 Sokoban AgentLoop, deterministic replay,
+paired suffix generation, three schedulers, cost accounting, and public-data experiment runner are
+implemented. A three-seed 50-update comparison is committed under
+`experiments/results/public_sokoban_main_v1`.
+
+The next method boundary is true group-wide top-B selection: the current implementation first
+chooses `B` sampled episodes and then one turn per episode. WebShop support and exhaustive
+per-anchor oracle correlation remain portfolio extensions, not completed capabilities.

@@ -47,14 +47,21 @@ Run only after the main pipeline is stable:
 Do not multiply every setting by three seeds. Select the configuration on one seed, then evaluate the
 frozen winner and baselines on all three seeds.
 
-Run seed 17 first:
+Run one frozen seed at a time:
 
 ```bash
 bash scripts/run_sokoban_ablation.sh /root/autodl-tmp/probegrpo-runtime/verl main
 ```
 
-The runner refuses reused output directories, records code/data revisions, and creates
-`summary.json` plus `summary.md` after all arms complete.
+Set `SEED` to 17, 42, or 101. The runner refuses reused output directories, records code/data
+revisions, and creates `summary.json` plus `summary.md` after all arms complete. The main-v1 run is
+complete; its compact record is in [`results/public_sokoban_main_v1`](results/public_sokoban_main_v1).
+
+Regenerate its aggregate table and vector figure with:
+
+```bash
+make results
+```
 
 Operational failures and their fixes are retained in dated records. See
 [`environment/2026-09-21-public-ablation-incidents.md`](environment/2026-09-21-public-ablation-incidents.md)
