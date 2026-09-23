@@ -53,14 +53,14 @@ def apply_probe_credits_tensor(
     selected = probe_deltas[valid].to(dtype=advantages.dtype)
     if selected.numel() == 0:
         return advantages
-    if selected.numel() == 1:
-        normalized_selected = torch.sign(selected)
+    if not torch.isfinite(selected).all():
+        raise ValueError("probe deltas must be finite")
+    largest = selected.abs().max()
+    if largest <= epsilon:
+        normalized_selected = torch.zeros_like(selected)
     else:
-        std = selected.std(unbiased=False)
-        if std <= epsilon:
-            normalized_selected = torch.zeros_like(selected)
-        else:
-            normalized_selected = (selected - selected.mean()) / std
+        scale = largest.clamp(min=1.0)
+        normalized_selected = selected / scale
 
     normalized = torch.zeros_like(probe_deltas, dtype=advantages.dtype)
     normalized[valid] = normalized_selected

@@ -1,0 +1,24 @@
+{
+  "result_name": "public_sokoban_main_v1",
+  "recorded_at": "2026-09-22",
+  "model": "Qwen/Qwen3.5-2B",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "verl_revision": "cf14ded3a448107e70a206fd201817cc1cbae348",
+  "dataset": "ZihanWang314/ragen-datasets",
+  "dataset_revision": "e2060cf7c51da891a68e0e7437309e5ec052e45b",
+  "train_examples": 512,
+  "test_examples": 128,
+  "training_steps": 50,
+  "rollouts_per_prompt": 4,
+  "probe_budget": 2,
+  "probe_lambda": 0.5,
+  "seeds": [17, 42, 101],
+  "hardware": "1 x NVIDIA GeForce RTX 4090 48 GB",
+  "raw_output_roots": [
+    "outputs/ablation-bbba7a8-mem25-seed17",
+    "outputs/ablation-main-v1-seed42",
+    "outputs/ablation-main-v1-seed101"
+  ],
+  "statistic": "mean and sample standard deviation across seeds",
+  "status": "portfolio result; descriptive, not a formal significance claim"
+}

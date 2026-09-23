@@ -19,7 +19,9 @@ training dependency stack.
 6. Both branches use the same suffix sampling seed and return a `ProbeResult`.
 7. The scheduler observes `abs(delta) / additional_rollout_tokens`.
 8. Sparse credits are packed into `[batch, anchors, tokens]` masks and aligned delta/valid matrices.
-9. `blend_probe_advantages` standardizes valid deltas and adds them only at selected token indices.
+9. `blend_probe_advantages` divides valid deltas by `max(1, largest absolute valid delta)`,
+   preserving zero and sign without amplifying small differences, and adds them only at selected
+   token indices.
 
 ## Public contracts
 
@@ -58,7 +60,7 @@ The adapter computes the adjustment without modifying trajectory rewards or unre
 ## Scheduler behavior
 
 - `random`: matched-cost control.
-- `entropy`: cheap uncertainty heuristic.
+- `surprisal`: sampled-action uncertainty heuristic using chosen-token negative log probability.
 - `linear_ucb`: predicts useful credit per extra rollout token with uncertainty bonuses.
 
 LinearUCB uses seven bounded features: entropy, inverse log-probability margin, normalized turn
@@ -72,14 +74,17 @@ updates or 200 valid probes use position-stratified random selection.
 - prefix replay error: skip and retain the error class in `skipped_reason`;
 - state mismatch: skip when strict mode is enabled;
 - no valid probe deltas: return the original GRPO advantage;
-- equal probe deltas: add zero relative credit;
+- zero probe delta: add no credit to that anchor, even when another delta is nonzero;
+- all-zero probe deltas: retain standard GRPO advantages;
 - budget zero: exactly recover GRPO.
 
 ## Current implementation boundary
 
-The core pipeline, framework-independent trace extraction, dense batch packing, and torch blending
-adapter are implemented and CPU-tested. The pinned current-verl GPU bootstrap and standard GRPO
-smoke scripts are implemented but still require an AutoDL run. After that gate passes, the next code
-boundary is a current-verl `AgentLoop` that adapts RAGEN's Sokoban behavior, converts rollout output
-into `TrajectoryTrace`, and routes factual/counterfactual suffixes through the same model server.
-See [GPU_RUNBOOK.md](GPU_RUNBOOK.md) before GPU installation.
+The core pipeline, current-verl v1 advantage hook, Qwen3.5 Sokoban AgentLoop, deterministic replay,
+paired suffix generation, three schedulers, cost accounting, and public-data experiment runner are
+implemented. A three-seed 50-update comparison is committed under
+`experiments/results/public_sokoban_main_v1`.
+
+The next method boundary is true group-wide top-B selection: the current implementation first
+chooses `B` sampled episodes and then one turn per episode. WebShop support and exhaustive
+per-anchor oracle correlation remain portfolio extensions, not completed capabilities.

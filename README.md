@@ -15,15 +15,46 @@ accounting.
 
 - A framework-independent `ReplayableEnv` contract with deterministic prefix replay and state hashes.
 - Structured `TurnRecord`, `Anchor`, `ProbeResult`, and experiment metrics types.
-- Random, entropy, and online LinearUCB anchor schedulers.
+- Random, chosen-token-surprisal, and online LinearUCB anchor schedulers.
 - Paired factual/counterfactual suffix probing with strict replay validation.
 - Probe-aware GRPO advantage shaping with exact assistant-turn token masks.
 - A lazy torch/verl adapter that keeps the core package dependency-free.
-- A deterministic tiny Sokoban environment and a one-command CPU smoke test.
+- A deterministic Sokoban environment, public RAGEN data adapter, and one-command CPU smoke test.
 - A pinned current-verl bootstrap and five-update `Qwen/Qwen3.5-2B` GRPO gate for one 48 GB GPU.
 
-The GPU scripts are ready, but the actual GPU run has not been executed yet. Sokoban and WebShop
-will reuse RAGEN's environment ideas while targeting verl's current `AgentLoop` interface.
+The operator has run five standard GRPO updates, restored step 5 into step 6, and verified a
+corrected one-update run with 8 trajectories and nonzero gradients. See the
+[GPU gate evidence](experiments/environment/2026-09-19-gpu-gate.md) for the differing configs,
+failures and evidence limits. This is not a ProbeGRPO performance result.
+
+A current-verl Sokoban AgentLoop has completed real Qwen rollouts and actor updates with and
+without probe credit. The three handcrafted levels remain smoke fixtures only. Formal experiments
+use an immutable public RAGEN release, deduplicate board layouts, remove train/test overlap, and
+record an exact shortest-path oracle for every selected board. Follow
+[the AgentLoop runbook](docs/SOKOBAN_AGENTLOOP.md).
+
+## Main result
+
+The frozen public-Sokoban comparison completed 50 training updates for four methods and three
+seeds on `Qwen/Qwen3.5-2B`. Values are mean +/- sample standard deviation across seeds 17, 42, and
+101 on the same 128 held-out boards.
+
+| Method | Final success | Paired uplift vs GRPO | Extra rollout tokens |
+|---|---:|---:|---:|
+| GRPO | 24.0% +/- 2.0% | - | 0.0% |
+| Random-B2 | 29.2% +/- 4.6% | +5.2 +/- 6.5 pp | 51.2% |
+| Surprisal-B2 | 31.2% +/- 3.4% | +7.3 +/- 4.3 pp | 57.3% |
+| **LinearUCB-B2** | **31.0% +/- 1.2%** | **+7.0 +/- 0.8 pp** | **51.7%** |
+
+![Public Sokoban three-seed result](docs/assets/public_sokoban_main_v1.svg)
+
+LinearUCB improves over its matched GRPO run on all three seeds and has the lowest cross-seed
+variance among probe methods. Surprisal has a 0.2-point higher mean, too small relative to the
+observed seed variation to treat as a meaningful win, at greater rollout cost. Random finds more
+high-impact anchors per 1,000 probe tokens, so this
+result supports counterfactual turn credit and LinearUCB stability—not a claim that LinearUCB is
+the best anchor-efficiency scheduler. See the [full result record](experiments/results/public_sokoban_main_v1/README.md),
+including protocol deviations and evidence limits.
 
 ## Architecture
 
@@ -74,7 +105,8 @@ ProbeGRPO CPU data-flow smoke test passed
 
 The default model is [`Qwen/Qwen3.5-2B`](https://huggingface.co/Qwen/Qwen3.5-2B). RAGEN's released
 training dependencies are too old for this model, so ProbeGRPO pins a current verl revision and its
-frozen dependency lock. On an AutoDL Linux instance with one 48 GB NVIDIA GPU:
+frozen dependency lock plus an explicit NumPy 2.3.5 compatibility override. On an AutoDL Linux
+instance with one 48 GB NVIDIA GPU:
 
 ```bash
 bash scripts/check_gpu_host.sh /path/to/persistent-workspace
@@ -94,7 +126,9 @@ The ProbeGRPO integration adapter expects the trainer batch to contain:
 - `probe_deltas`: `[batch, anchors]`
 - `probe_valid`: `[batch, anchors]`
 
-It standardizes valid deltas and adds `lambda * delta_z * turn_mask` to the base advantages.
+It divides valid deltas by `max(1, largest absolute valid delta)` in the batch and adds
+`lambda * normalized_delta * turn_mask` to the base advantages. A zero factual-minus-
+counterfactual reward difference always adds zero credit.
 
 ## Project milestones
 
@@ -102,12 +136,23 @@ It standardizes valid deltas and adds `lambda * delta_z * turn_mask` to the base
 2. **GPU stack gate:** Qwen3.5-2B completes five standard GRPO updates and resumes on current verl.
 3. **Agent rollout:** a RAGEN-derived Sokoban task completes multi-turn current-verl `AgentLoop`
    rollouts and deterministic prefix replay.
-4. **Matched-budget comparison:** GRPO, random probe, entropy probe, and LinearUCB use identical
-   main-rollout and probe budgets.
-5. **Portfolio result:** publish curves, cost table, replayable WebShop traces, and a short demo.
+4. **Matched-budget comparison:** completed GRPO, random, surprisal, and LinearUCB on three seeds.
+5. **Portfolio packaging:** result table and cost figure are complete; trajectory demo and optional
+   WebShop extension remain.
 
 For an internship portfolio, a well-explained negative result is acceptable. Do not fabricate gains;
 report when extra probes improve credit diagnostics but fail to improve final reward.
+
+The reproducible ablation is launched on one GPU with:
+
+```bash
+bash scripts/run_sokoban_ablation.sh /root/autodl-tmp/probegrpo-runtime/verl main
+```
+
+Set `SEED` to 17, 42, or 101. The runner writes JSON and Markdown per-seed tables. Run
+`make results` to reproduce the committed three-seed aggregation and SVG. The current budget
+implementation probes the first `B` of four sampled episodes in each prompt group and selects one
+turn inside each episode; it is not yet a group-wide top-B selector.
 
 ## Evaluation metrics
 
@@ -127,6 +172,7 @@ report when extra probes improve credit diagnostics but fail to improve final re
 
 ## Resume bullet
 
-> Built ProbeGRPO, a Qwen3.5-based Agent-RL system on current verl with deterministic trajectory
-> replay, budget-aware counterfactual credit probing, turn-level advantage shaping, and matched-cost
-> evaluation on Sokoban and WebShop.
+> Built ProbeGRPO, a Qwen3.5 Agent-RL system on current verl with deterministic counterfactual
+> replay, budget-aware anchor scheduling, and turn-local advantage shaping; improved public
+> Sokoban success from 24.0% +/- 2.0% to 31.0% +/- 1.2% across three seeds while measuring a
+> 1.517x rollout-token cost.

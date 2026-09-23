@@ -6,7 +6,7 @@ ProbeGRPO trains on current `verl`; it does not install RAGEN's pinned training 
 GPU milestone uses:
 
 - `verl` commit `cf14ded3a448107e70a206fd201817cc1cbae348`;
-- the commit's frozen `uv.lock` with the `vllm` and `fsdp` extras;
+- the commit's frozen `uv.lock` with `vllm` and `fsdp`, then NumPy 2.3.5 override;
 - `Qwen/Qwen3.5-2B`;
 - one NVIDIA GPU with at least 45,000 MiB visible memory;
 - driver CUDA compatibility 12.8 or newer;
@@ -33,9 +33,15 @@ The bootstrap is intentionally pinned. It records the ProbeGRPO commit, verl com
 creation time in `runtime_manifest.txt`. If setup fails, keep the full command output; do not upgrade
 individual torch, Transformers, vLLM, or verl packages in place.
 
+The lock pins NumPy 2.4.6, incompatible with mistral-common 1.11.3 on Python 3.12. Bootstrap applies
+and records `numpy==2.3.5` and runs `uv pip check`. Re-running `uv sync --frozen` restores the
+incompatible version and may remove editable ProbeGRPO; reapply the override and editable install
+after any intentional sync. The upstream lock itself is not edited.
+
 The bootstrap resolves the lock once and creates `verl/.venv`. Later commands use that environment's
 absolute Python path, including for Ray workers, so an accidental ambient Conda environment cannot
-silently change the training stack.
+silently change the training stack. The git fetch downloads only the pinned commit, and uv/Hugging
+Face caches stay under the runtime data directory instead of AutoDL's small system disk.
 
 If Hugging Face access is slow, configure a trusted mirror explicitly in the shell before running
 the scripts. Never write an access token into this repository or a command-line argument saved in
@@ -57,7 +63,9 @@ Defaults:
 
 - two GSM8K prompts per update and four rollouts per prompt;
 - LoRA rank 32, alpha 64, `all-linear` target discovery;
-- prompt/response limits of 256 tokens;
+- prompt limit 256, response limit 1024;
+- actor PPO mini-batch 2 (verl multiplies it by rollout.n=4, yielding 8 trajectories);
+- dataloader workers 0; short Ray temporary path `/tmp/pgr`; OMP threads default 1;
 - optimizer and parameter offload;
 - five training updates and a checkpoint at step 5;
 - console-only logging and no W&B login.
@@ -66,7 +74,10 @@ To verify resume, rerun against the same output directory:
 
 ```bash
 TOTAL_TRAINING_STEPS=6 bash scripts/run_verl_grpo_smoke.sh \
-  /path/to/persistent-workspace/probegrpo-runtime/verl
+  /path/to/persistent-workspace/probegrpo-runtime/verl \
+  trainer.resume_mode=resume_path \
+  trainer.resume_from_path=/absolute/path/to/ProbeGRPO/outputs/verl-grpo-smoke/checkpoints/global_step_5 \
+  trainer.save_freq=1
 ```
 
 The second command must resume from step 5 and perform exactly one additional update.
@@ -84,3 +95,7 @@ The second command must resume from step 5 and perform exactly one additional up
 
 Only after this gate passes should the project implement and run the Sokoban AgentLoop, followed by
 the deterministic replay/probe hook.
+
+Operator-reported evidence is in `experiments/environment/2026-09-19-gpu-gate.md`. The corrected
+defaults have passed a one-update signal smoke; five steps plus resume were tested with the earlier
+256-token/mini-batch-8 configuration. Next: `docs/SOKOBAN_AGENTLOOP.md`.

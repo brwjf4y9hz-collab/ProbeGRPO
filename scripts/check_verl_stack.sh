@@ -23,6 +23,9 @@ if [[ ! -x "$VERL_DIR/.venv/bin/python" ]]; then
 fi
 
 cd "$VERL_DIR"
+export HF_HOME="${HF_HOME:-$VERL_DIR/data/huggingface}"
+export HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 "$VERL_DIR/.venv/bin/python" - <<'PY'
 import importlib.metadata
 
