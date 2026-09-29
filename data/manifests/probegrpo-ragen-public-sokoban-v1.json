@@ -1,0 +1,34 @@
+{
+  "derived_splits": {
+    "test": {
+      "oracle_shortest_steps_max": 9,
+      "rows": 128,
+      "sha256": "31d8b0b4ec5d8951af305289eb430686ed9e95a409fa0d43e0e6abd9d87b2728",
+      "source_index_max": 20171,
+      "source_index_min": 20003
+    },
+    "train": {
+      "oracle_shortest_steps_max": 11,
+      "rows": 512,
+      "sha256": "75ac2a084eba22d34d18ed214791e1775c71cb9cd739eca875d46402e224d736",
+      "source_index_max": 10596,
+      "source_index_min": 10000
+    }
+  },
+  "max_turns": 12,
+  "selection": "lowest unique source indices; test boards overlapping the selected train subset are excluded",
+  "source_files": {
+    "test": {
+      "path": "sokoban/test.parquet",
+      "sha256": "558c011757a4a37d8ef166e403008d87cb7caaafa4368405e80c7ef3d2e9a6fc",
+      "total_rows": 500
+    },
+    "train": {
+      "path": "sokoban/train.parquet",
+      "sha256": "b34ed8c6620df72bd77b0159b2f9957763a8da039614426ad2251bcf98160c1b",
+      "total_rows": 10000
+    }
+  },
+  "source_repo": "ZihanWang314/ragen-datasets",
+  "source_revision": "e2060cf7c51da891a68e0e7437309e5ec052e45b"
+}

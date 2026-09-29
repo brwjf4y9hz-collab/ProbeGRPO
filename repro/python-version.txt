@@ -1,0 +1,3 @@
+Python 3.12.3
+Linux-5.15.0-78-generic-x86_64-with-glibc2.35
+/root/miniconda3/bin/python
