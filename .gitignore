@@ -9,3 +9,24 @@ wandb/
 .env
 
 probegrpo-runtime/verl/data/huggingface/
+
+# Local recovery archive and machine-specific runtime/data
+recovery_*/
+probegrpo-runtime/
+outputs/
+experiments/**/outputs/
+checkpoints/
+models/
+**/huggingface/
+**/.cache/
+wandb/
+runs/
+tmp/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.tar
+*.tar.gz
+*.zip
