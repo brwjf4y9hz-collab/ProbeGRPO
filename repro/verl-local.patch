@@ -1,0 +1,45 @@
+diff --git a/.gitignore b/.gitignore
+index 24b50b62..1081c247 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -130,3 +130,13 @@ logs
+ log
+ outputs
+ .history
++
++# Local Hugging Face model/cache data
++data/huggingface/
++wandb/
++outputs/
++checkpoints/
++*.safetensors
++*.ckpt
++*.pt
++*.pth
+diff --git a/verl/trainer/ppo/v1/trainer_base.py b/verl/trainer/ppo/v1/trainer_base.py
+index f5eebc6c..8bb3a1a6 100644
+--- a/verl/trainer/ppo/v1/trainer_base.py
++++ b/verl/trainer/ppo/v1/trainer_base.py
+@@ -1756,6 +1756,22 @@ class PPOTrainer(ABC):
+             config=self.config.algorithm,
+         )
+ 
++        probe_config = self.config.get("probe", {})
++        if probe_config.get("enabled", False):
++            from pathlib import Path as _ProbePath
++
++            from probegrpo.integration.verl_v1_sidecar import apply_sidecar_probe_credits
++
++            data, probe_metrics = apply_sidecar_probe_credits(
++                data,
++                batch.keys,
++                sidecar_dir=_ProbePath(self.config.trainer.rollout_data_dir)
++                / "episodes"
++                / f"step-{self.global_steps}",
++                budget=int(probe_config.get("budget", 1)),
++                lambda_coef=float(probe_config.get("lambda_coef", 0.5)),
++            )
++            metrics.update(probe_metrics)
+         # 4. write nested advantages and returns back to TransferQueue
+         fields = ["advantages", "returns"]
+         if self.config.algorithm.use_kl_in_reward:
