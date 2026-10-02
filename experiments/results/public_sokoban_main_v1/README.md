@@ -46,7 +46,7 @@ The most defensible comparison is LinearUCB-B2 against GRPO:
 - success: `31.0% +/- 1.2%` versus `24.0% +/- 2.0%`;
 - paired improvement: `+7.0 +/- 0.8` percentage points;
 - successful test episodes: LinearUCB exceeds matched-seed GRPO by 9, 10, and 8 out of 128;
-- extra rollout tokens: `51.7%` on average, or `1.517x` the main-rollout token count;
+- extra rollout tokens: `51.6%` on average, or `1.516x` the main-rollout token count;
 - valid probes: `1,138 / 1,200` (`94.8%`).
 
 Surprisal-B2 has the numerically highest mean success (`31.2%`) but costs more extra rollout tokens
@@ -60,7 +60,7 @@ LinearUCB is much smaller than the observed seed variation and is not treated as
   high-impact-anchor-per-1,000-token metric. Random-B2 averages `11.93`, LinearUCB `11.32`, and
   Surprisal `10.44`; therefore the planned anchor-efficiency claim is not supported.
 - LinearUCB misses the original `<=1.5x` rollout-cost target by 1.7 percentage points. Report the
-  measured `1.517x` cost rather than rounding it down.
+  measured `1.516x` cost rather than rounding it down.
 - Budget 2 currently probes the first two sampled episodes within each prompt group, then schedules
   one turn inside each selected episode. It is not yet group-wide top-B selection.
 - Seed 17's GRPO arm completed before the PPO mini-batch padding fix and was retained because its

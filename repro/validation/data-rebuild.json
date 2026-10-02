@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "date": "2026-10-02",
+  "environment": "original training .venv, Python 3.12.3",
+  "train_sha256": "75ac2a084eba22d34d18ed214791e1775c71cb9cd739eca875d46402e224d736",
+  "test_sha256": "31d8b0b4ec5d8951af305289eb430686ed9e95a409fa0d43e0e6abd9d87b2728",
+  "matches_original": true
+}

@@ -1,0 +1,6 @@
+{
+  "ok": true,
+  "rejects_unrecognized_edit": true,
+  "preserves_existing_file": true,
+  "message": "Unrecognized trainer contents; preserving existing files"
+}

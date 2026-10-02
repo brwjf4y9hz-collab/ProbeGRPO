@@ -14,7 +14,7 @@ implemented on current verl with a Qwen3.5-2B LoRA actor and a replayable Sokoba
 
 On a checksum-pinned public RAGEN Sokoban split, four methods were trained for 50 updates using
 three random seeds. LinearUCB-B2 increased held-out success from `24.0% +/- 2.0%` for GRPO to
-`31.0% +/- 1.2%`, a paired improvement of `7.0 +/- 0.8` percentage points, while adding `51.7%`
+`31.0% +/- 1.2%`, a paired improvement of `7.0 +/- 0.8` percentage points, while adding `51.6%`
 rollout tokens. Surprisal-B2 reached a similar mean at higher cost; Random-B2 was less stable. These
 results establish a reproducible engineering result, not statistical significance or a claim that
 counterfactual credit assignment is new.
@@ -121,7 +121,7 @@ Values are mean plus or minus sample standard deviation across three seeds.
 | GRPO | 24.0% +/- 2.0% | - | 0.0% | 0/0 | - |
 | Random-B2 | 29.2% +/- 4.6% | +5.2 +/- 6.5 pp | 51.2% | 1140/1200 | 11.93 |
 | Surprisal-B2 | 31.2% +/- 3.4% | +7.3 +/- 4.3 pp | 57.3% | 1142/1200 | 10.44 |
-| LinearUCB-B2 | 31.0% +/- 1.2% | +7.0 +/- 0.8 pp | 51.7% | 1138/1200 | 11.32 |
+| LinearUCB-B2 | 31.0% +/- 1.2% | +7.0 +/- 0.8 pp | 51.6% | 1138/1200 | 11.32 |
 
 LinearUCB improves over GRPO in all three matched seeds: 9, 10, and 8 additional successful test
 episodes out of 128. Random has one large gain, one small gain, and one tie, producing substantially
@@ -178,4 +178,4 @@ The strongest honest resume claim is the stable paired LinearUCB result, not sch
 > Built ProbeGRPO, a Qwen3.5 Agent-RL system on current verl with deterministic counterfactual
 > replay, budget-aware anchor scheduling, and turn-local advantage shaping; improved public
 > Sokoban success from 24.0% +/- 2.0% to 31.0% +/- 1.2% across three seeds while measuring a
-> 1.517x rollout-token cost.
+> 1.516x rollout-token cost.

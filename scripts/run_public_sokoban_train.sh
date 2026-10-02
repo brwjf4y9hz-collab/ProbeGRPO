@@ -16,6 +16,7 @@ PROBE_BUDGET="${PROBE_BUDGET:-0}"
 PROBE_SCHEDULER="${PROBE_SCHEDULER:-random}"
 PROBE_LAMBDA="${PROBE_LAMBDA:-0.5}"
 TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-50}"
+SAVE_FREQ="${SAVE_FREQ:-$TOTAL_TRAINING_STEPS}"
 TRAIN_LIMIT="${TRAIN_LIMIT:-512}"
 TEST_LIMIT="${TEST_LIMIT:-128}"
 MAX_TURNS="${MAX_TURNS:-12}"
@@ -49,7 +50,7 @@ if [[ ! -f "$DATA_DIR/train.parquet" || ! -f "$DATA_DIR/test.parquet" ]]; then
     --max-turns "$MAX_TURNS"
 fi
 
-"$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/install_verl_v1_probe_hook.py" "$VERL_DIR"
+bash "$PROJECT_DIR/scripts/setup_verl.sh" "$VERL_DIR"
 "$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/write_run_manifest.py" \
   --project-dir "$PROJECT_DIR" \
   --verl-dir "$VERL_DIR" \
@@ -62,11 +63,13 @@ fi
   --lambda-coef "$PROBE_LAMBDA" \
   --model "$MODEL_PATH" \
   --model-revision "$MODEL_REVISION" \
-  --steps "$TOTAL_TRAINING_STEPS"
+  --steps "$TOTAL_TRAINING_STEPS" \
+  --save-freq "$SAVE_FREQ" \
+  --hydra-overrides "$@"
 
 bash "$PROJECT_DIR/scripts/run_verl_sokoban_smoke.sh" "$VERL_DIR" \
   trainer.resume_mode=disable \
-  trainer.save_freq=-1 \
+  trainer.save_freq="$SAVE_FREQ" \
   trainer.val_before_train=true \
   trainer.test_freq=10 \
   trainer.experiment_name="public-sokoban-${METHOD}-seed${SEED}" \

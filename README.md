@@ -11,6 +11,16 @@ assignment itself is new. The differentiators are a small reusable core, determi
 matched-budget schedulers, current verl integration, RAGEN-derived task adapters, and explicit cost
 accounting.
 
+## 保存与复现入口（2026-10-02）
+
+代码、配置和小结果保存在 Git；框架用固定 commit + 最小 patch；模型、数据和原始输出
+放在独立归档，并记录 SHA-256。[保存清单](repro/ARTIFACTS.md) ·
+[从干净环境开始](REPRODUCE.md) · [仓库盘点](REPO_AUDIT.md) ·
+[核验记录](repro/validation/README.md)。
+
+12 次历史运行的 1,536 条最终评估记录已重新核对。主实验当时没有保存最终模型权重；
+现存大 checkpoint 属于早期 GSM8K smoke。新的 GPU 训练尚未重跑。
+
 ## What is implemented
 
 - A framework-independent `ReplayableEnv` contract with deterministic prefix replay and state hashes.
@@ -44,7 +54,7 @@ seeds on `Qwen/Qwen3.5-2B`. Values are mean +/- sample standard deviation across
 | GRPO | 24.0% +/- 2.0% | - | 0.0% |
 | Random-B2 | 29.2% +/- 4.6% | +5.2 +/- 6.5 pp | 51.2% |
 | Surprisal-B2 | 31.2% +/- 3.4% | +7.3 +/- 4.3 pp | 57.3% |
-| **LinearUCB-B2** | **31.0% +/- 1.2%** | **+7.0 +/- 0.8 pp** | **51.7%** |
+| **LinearUCB-B2** | **31.0% +/- 1.2%** | **+7.0 +/- 0.8 pp** | **51.6%** |
 
 ![Public Sokoban three-seed result](docs/assets/public_sokoban_main_v1.svg)
 
@@ -86,14 +96,27 @@ The core and smoke test intentionally require only the Python standard library.
 
 ```bash
 cd ProbeGRPO
-mamba env create -f environment.yml
-conda activate probegrpo
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
 make check
 ```
+
+See [REPRODUCE.md](REPRODUCE.md) for clean-clone steps, the pinned `verl` patch, data/model
+provenance, and the GPU smoke/run requirements.
 
 If the environment already exists, only activate it and run `make check`. This local macOS
 environment is for development and CPU tests; create a separate environment on the NVIDIA Linux
 host for verl, PyTorch CUDA, and vLLM.
+
+## CPU smoke validation
+
+For a standalone CPU data-flow smoke without installation:
+
+```bash
+bash scripts/run_cpu_smoke.sh
+```
 
 Expected final line:
 
@@ -111,6 +134,8 @@ instance with one 48 GB NVIDIA GPU:
 ```bash
 bash scripts/check_gpu_host.sh /path/to/persistent-workspace
 bash scripts/bootstrap_verl.sh /path/to/persistent-workspace/probegrpo-runtime
+export MODEL_PATH=/path/to/persistent-workspace/models/Qwen3.5-2B-15852e8
+/path/to/persistent-workspace/probegrpo-runtime/verl/.venv/bin/python scripts/download_model.py --output-dir "$MODEL_PATH"
 bash scripts/check_verl_stack.sh /path/to/persistent-workspace/probegrpo-runtime/verl
 bash scripts/run_verl_grpo_smoke.sh /path/to/persistent-workspace/probegrpo-runtime/verl
 ```
@@ -166,13 +191,16 @@ turn inside each episode; it is not yet a group-wide top-B selector.
 ## Repository policy
 
 - Raw traces, checkpoints, and W&B files belong under ignored `artifacts/`, `outputs/`, or `wandb/`.
-- Publish LoRA adapters rather than full model weights.
+- Keep full resumable checkpoints outside Git; publish a portable adapter only after an actual export and verification. No main-run adapter currently exists.
 - Never commit API keys, cookies, WebShop sessions, or unredacted external traces.
 - Results must include the exact config, git revision, seeds, and unsuccessful runs.
+- The upstream `verl` source is fetched at a pinned commit during environment setup; its source tree
+  is not vendored in this repository. ProbeGRPO's local trainer change is maintained as
+  `patches/verl-probegrpo.patch` and applied by `scripts/bootstrap_verl.sh`.
 
 ## Resume bullet
 
 > Built ProbeGRPO, a Qwen3.5 Agent-RL system on current verl with deterministic counterfactual
 > replay, budget-aware anchor scheduling, and turn-local advantage shaping; improved public
 > Sokoban success from 24.0% +/- 2.0% to 31.0% +/- 1.2% across three seeds while measuring a
-> 1.517x rollout-token cost.
+> 1.516x rollout-token cost.

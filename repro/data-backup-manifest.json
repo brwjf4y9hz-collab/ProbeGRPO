@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "path": "prepared/probegrpo-gsm8k/test.parquet",
+      "type": "file",
+      "bytes": 1183032,
+      "sha256": "e801bce6b15925630ea9976dc14419e49735a90fd54d267911e6701ebdc0d489"
+    },
+    {
+      "path": "prepared/probegrpo-gsm8k/train.parquet",
+      "type": "file",
+      "bytes": 6555601,
+      "sha256": "89cd3cb8d28e5274e7f0bf71ff541ea5654ac9e30589ac4b5d19c3f783a3858c"
+    },
+    {
+      "path": "prepared/probegrpo-ragen-public-sokoban-v1/manifest.json",
+      "type": "file",
+      "bytes": 1090,
+      "sha256": "30da1b5158766c869de76eb0fa59de46f2471f0c53536f01c7f3849fdad0c8d5"
+    },
+    {
+      "path": "prepared/probegrpo-ragen-public-sokoban-v1/test.parquet",
+      "type": "file",
+      "bytes": 77583,
+      "sha256": "31d8b0b4ec5d8951af305289eb430686ed9e95a409fa0d43e0e6abd9d87b2728"
+    },
+    {
+      "path": "prepared/probegrpo-ragen-public-sokoban-v1/train.parquet",
+      "type": "file",
+      "bytes": 285656,
+      "sha256": "75ac2a084eba22d34d18ed214791e1775c71cb9cd739eca875d46402e224d736"
+    },
+    {
+      "path": "prepared/probegrpo-sokoban-fixtures/test.parquet",
+      "type": "file",
+      "bytes": 6770,
+      "sha256": "3ee7e011ce77363b8bc91ed98cd070a5c73f3063f16f6af70e5a38b4054cc0bc"
+    },
+    {
+      "path": "prepared/probegrpo-sokoban-fixtures/train.parquet",
+      "type": "file",
+      "bytes": 7187,
+      "sha256": "c9f0cc76357279d1c30d8e983bc338dab3f5f07d258e319825db50952ae3a3d6"
+    },
+    {
+      "path": "raw-ragen/test.parquet",
+      "type": "file",
+      "bytes": 41865,
+      "sha256": "558c011757a4a37d8ef166e403008d87cb7caaafa4368405e80c7ef3d2e9a6fc"
+    },
+    {
+      "path": "raw-ragen/train.parquet",
+      "type": "file",
+      "bytes": 692935,
+      "sha256": "b34ed8c6620df72bd77b0159b2f9957763a8da039614426ad2251bcf98160c1b"
+    }
+  ],
+  "file_count": 9,
+  "total_file_bytes": 8851719
+}

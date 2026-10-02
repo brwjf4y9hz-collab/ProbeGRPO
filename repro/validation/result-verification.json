@@ -1,0 +1,95 @@
+{
+  "status": "passed",
+  "run_count": 12,
+  "evaluation_episodes": 1536,
+  "comparison": "exact counts and success; full-precision costs/timing within 1e-12",
+  "runs": [
+    {
+      "seed": 17,
+      "method": "grpo",
+      "eval_count": 128,
+      "success_count": 31,
+      "training_source_revision": "bbba7a8b430f3231e35f809daa537a06e01b397a"
+    },
+    {
+      "seed": 17,
+      "method": "random_b2",
+      "eval_count": 128,
+      "success_count": 35,
+      "training_source_revision": "31e0da9b3aff1176c227c54784517905222c2190"
+    },
+    {
+      "seed": 17,
+      "method": "surprisal_b2",
+      "eval_count": 128,
+      "success_count": 35,
+      "training_source_revision": "31e0da9b3aff1176c227c54784517905222c2190"
+    },
+    {
+      "seed": 17,
+      "method": "linear_ucb_b2",
+      "eval_count": 128,
+      "success_count": 40,
+      "training_source_revision": "31e0da9b3aff1176c227c54784517905222c2190"
+    },
+    {
+      "seed": 42,
+      "method": "grpo",
+      "eval_count": 128,
+      "success_count": 28,
+      "training_source_revision": "18deea4a4f6b1b27e62974f62924f7e4a162c9dc"
+    },
+    {
+      "seed": 42,
+      "method": "random_b2",
+      "eval_count": 128,
+      "success_count": 44,
+      "training_source_revision": "18deea4a4f6b1b27e62974f62924f7e4a162c9dc"
+    },
+    {
+      "seed": 42,
+      "method": "surprisal_b2",
+      "eval_count": 128,
+      "success_count": 43,
+      "training_source_revision": "18deea4a4f6b1b27e62974f62924f7e4a162c9dc"
+    },
+    {
+      "seed": 42,
+      "method": "linear_ucb_b2",
+      "eval_count": 128,
+      "success_count": 38,
+      "training_source_revision": "18deea4a4f6b1b27e62974f62924f7e4a162c9dc"
+    },
+    {
+      "seed": 101,
+      "method": "grpo",
+      "eval_count": 128,
+      "success_count": 33,
+      "training_source_revision": "18deea4a4f6b1b27e62974f62924f7e4a162c9dc"
+    },
+    {
+      "seed": 101,
+      "method": "random_b2",
+      "eval_count": 128,
+      "success_count": 33,
+      "training_source_revision": "18deea4a4f6b1b27e62974f62924f7e4a162c9dc"
+    },
+    {
+      "seed": 101,
+      "method": "surprisal_b2",
+      "eval_count": 128,
+      "success_count": 42,
+      "training_source_revision": "18deea4a4f6b1b27e62974f62924f7e4a162c9dc"
+    },
+    {
+      "seed": 101,
+      "method": "linear_ucb_b2",
+      "eval_count": 128,
+      "success_count": 41,
+      "training_source_revision": "18deea4a4f6b1b27e62974f62924f7e4a162c9dc"
+    }
+  ],
+  "errors": [],
+  "eval_board_set_sha256": "70ff1cda93fbc4310aeb48f131501a7b55f361774392a849942ac2c54761d81b",
+  "scope": "Re-aggregation of saved evidence; no GPU training rerun."
+}

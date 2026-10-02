@@ -1,0 +1,230 @@
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+test_combines_training_log_and_episode_costs (test_ablation_summary.AblationSummaryTest) ... ok
+test_ignores_incomplete_and_failed_run_directories (test_ablation_summary.AblationSummaryTest) ... ok
+test_all_zero_deltas_add_no_credit (test_advantage.AdvantageTest) ... ok
+test_budget_zero_is_identical_to_grpo (test_advantage.AdvantageTest) ... ok
+test_equal_nonzero_deltas_keep_causal_credit (test_advantage.AdvantageTest) ... ok
+test_invalid_credit_is_ignored (test_advantage.AdvantageTest) ... ok
+test_invalid_token_index_is_rejected (test_advantage.AdvantageTest) ... ok
+test_larger_reward_scale_is_bounded (test_advantage.AdvantageTest) ... ok
+test_nonfinite_delta_is_rejected (test_advantage.AdvantageTest) ... ok
+test_only_selected_turn_tokens_change (test_advantage.AdvantageTest) ... ok
+test_preserves_sign_and_relative_magnitude (test_advantage.AdvantageTest) ... ok
+test_single_small_delta_keeps_its_magnitude (test_advantage.AdvantageTest) ... ok
+test_zero_delta_does_not_change_any_token (test_advantage.AdvantageTest) ... ok
+test_zero_delta_stays_zero_with_other_valid_probes (test_advantage.AdvantageTest) ... ok
+test_budget_does_not_execute_unseen_action (test_agent_episode.EpisodeTest) ... ok
+test_context_cannot_rewrite_or_train_old_tokens (test_agent_episode.EpisodeTest) ... ok
+test_empty_generation_after_feedback_strips_context (test_agent_episode.EpisodeTest) ... ok
+test_invalid_model_text_and_horizon (test_agent_episode.EpisodeTest) ... ok
+test_multiturn_masks_replay_and_bridge (test_agent_episode.EpisodeTest) ... ok
+test_no_generation_fails_closed (test_agent_episode.EpisodeTest) ... ok
+test_reproducible_scripted_episode_and_concurrent_isolation (test_agent_episode.EpisodeTest) ... ok
+test_invalid_attempt_changes_hash_and_consumes_horizon (test_agent_episode.SokobanTest) ... ok
+test_replay_full_state_and_success (test_agent_episode.SokobanTest) ... ok
+test_wall_blocks_push (test_agent_episode.SokobanTest) ... ok
+test_budget_zero_preserves_standard_grpo (test_batching.ProbeBatchingTest) ... ok
+test_dense_round_trip_modifies_only_masked_tokens (test_batching.ProbeBatchingTest) ... ok
+test_invalid_credit_is_ignored (test_batching.ProbeBatchingTest) ... ok
+test_lambda_zero_ignores_valid_probe (test_batching.ProbeBatchingTest) ... ok
+test_packs_masks_deltas_validity_and_padding (test_batching.ProbeBatchingTest) ... ok
+test_rejects_overflow_out_of_range_and_overlap (test_batching.ProbeBatchingTest) ... ok
+test_anchor_context_mismatch_falls_back_to_zero_credit (test_episode_probing.EpisodeProbingTest) ... ok
+test_invalid_alternative_skips_without_generation (test_episode_probing.EpisodeProbingTest) ... ok
+test_paired_suffix_uses_same_seed_and_replays_prefix (test_episode_probing.EpisodeProbingTest) ... ok
+test_suffix_error_falls_back_to_zero_credit (test_episode_probing.EpisodeProbingTest) ... ok
+test_all_runnable_schedulers_select_eligible_anchor (test_episode_scheduling.EpisodeSchedulingTest) ... ok
+test_linear_ucb_replays_only_previous_step_history (test_episode_scheduling.EpisodeSchedulingTest) ... ok
+test_records_use_chosen_token_surprisal (test_episode_scheduling.EpisodeSchedulingTest) ... ok
+test_jsonl_round_trip_and_summary (test_metrics_and_config.MetricsAndConfigTest) ... ok
+test_probe_config_validation (test_metrics_and_config.MetricsAndConfigTest) ... ok
+test_budget_zero_does_no_work (test_pipeline.PipelineTest) ... ok
+test_end_to_end_budget_and_credit (test_pipeline.PipelineTest) ... ok
+test_budget_one_runs_once_per_four_trajectory_group (test_probe_mode.ProbeModeTest) ... ok
+test_budget_two_runs_first_two_sessions_for_supported_schedulers (test_probe_mode.ProbeModeTest) ... ok
+test_budget_zero_overrides_debug_switch_and_spends_nothing (test_probe_mode.ProbeModeTest) ... ok
+test_debug_probe_preserves_rollout_only_gate (test_probe_mode.ProbeModeTest) ... ok
+test_disabled_baseline_spends_no_probe_rollouts (test_probe_mode.ProbeModeTest) ... ok
+test_unsupported_budget_and_scheduler_fail_before_generation (test_probe_mode.ProbeModeTest) ... ok
+test_malformed_or_non_public_task_fails (test_public_sokoban.PublicSokobanTest) ... ok
+test_public_prompt_round_trip_and_replay (test_public_sokoban.PublicSokobanTest) ... ok
+test_public_split_conversion_deduplicates_by_source_index (test_public_sokoban.PublicSokobanTest) ... ok
+test_adapter_replays_prefix (test_ragen_env_adapter.RagenEnvAdapterTest) ... ok
+test_missing_alternative_is_safe (test_replay_and_probe.ReplayAndProbeTest) ... ok
+test_probe_uses_same_anchor_state (test_replay_and_probe.ReplayAndProbeTest) ... ok
+test_replay_is_deterministic (test_replay_and_probe.ReplayAndProbeTest) ... ok
+test_state_mismatch_falls_back_to_zero_credit (test_replay_and_probe.ReplayAndProbeTest) ... ok
+test_extracts_prefix_statistics_and_suffix_cost (test_rollout.RolloutExtractionTest) ... ok
+test_rejects_duplicate_or_out_of_range_tokens (test_rollout.RolloutExtractionTest) ... ok
+test_rejects_misaligned_token_statistics (test_rollout.RolloutExtractionTest) ... ok
+test_rejects_tokens_shared_by_two_turns (test_rollout.RolloutExtractionTest) ... ok
+test_alternative_is_legal_and_not_factual (test_schedulers.SchedulerTest) ... ok
+test_budget_zero_selects_nothing (test_schedulers.SchedulerTest) ... ok
+test_entropy_scheduler_selects_highest_entropy (test_schedulers.SchedulerTest) ... ok
+test_features_are_bounded (test_schedulers.SchedulerTest) ... ok
+test_linear_ucb_updates_only_from_valid_probe (test_schedulers.SchedulerTest) ... ok
+test_random_scheduler_is_reproducible (test_schedulers.SchedulerTest) ... ok
+test_dependency_free_svg_contains_accessible_metadata (test_seed_aggregation.SeedAggregationTest) ... ok
+test_requires_all_methods_for_every_seed (test_seed_aggregation.SeedAggregationTest) ... ok
+test_uses_paired_seed_uplift_and_sample_sd (test_seed_aggregation.SeedAggregationTest) ... ok
+test_legacy_ragen_import_reexports_verl_adapter (test_verl_integration.VerlIntegrationTest) ... ok
+test_injects_once_and_keeps_original (test_verl_v1_patch.VerlV1PatchTest) ... ok
+test_budget_zero_needs_no_sidecars (test_verl_v1_sidecar.VerlV1SidecarTest) ... ok
+test_budget_zero_reports_no_probe_cost (test_verl_v1_sidecar.VerlV1SidecarTest) ... ok
+test_distinguishes_unselected_and_failed_probes (test_verl_v1_sidecar.VerlV1SidecarTest) ... ok
+test_lambda_zero_keeps_original_tensor (test_verl_v1_sidecar.VerlV1SidecarTest) ... skipped 'PyTorch is installed only in the verl runtime'
+test_matches_rows_and_only_assistant_turn_tokens (test_verl_v1_sidecar.VerlV1SidecarTest) ... ok
+test_rejects_misaligned_mask_before_credit (test_verl_v1_sidecar.VerlV1SidecarTest) ... ok
+test_rejects_multi_span_episode (test_verl_v1_sidecar.VerlV1SidecarTest) ... ok
+test_tensor_hook_changes_only_anchor_tokens (test_verl_v1_sidecar.VerlV1SidecarTest) ... skipped 'PyTorch is installed only in the verl runtime'
+
+----------------------------------------------------------------------
+Ran 78 tests in 0.036s
+
+OK (skipped=2)
+PYTHONPATH=src python3 -m probegrpo.smoke
+{
+  "base_advantages": [
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ]
+  ],
+  "final_advantages": [
+    [
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    [
+      0.25,
+      0.25,
+      0.75,
+      0.75,
+      0.25,
+      0.25
+    ]
+  ],
+  "packed_batch": {
+    "probe_deltas": [
+      [
+        0.0
+      ],
+      [
+        1.0
+      ]
+    ],
+    "probe_deltas_shape": [
+      2,
+      1
+    ],
+    "probe_turn_masks": [
+      [
+        [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      ],
+      [
+        [
+          false,
+          false,
+          true,
+          true,
+          false,
+          false
+        ]
+      ]
+    ],
+    "probe_turn_masks_shape": [
+      2,
+      1,
+      6
+    ],
+    "probe_valid": [
+      [
+        false
+      ],
+      [
+        true
+      ]
+    ],
+    "probe_valid_shape": [
+      2,
+      1
+    ]
+  },
+  "probe": {
+    "additional_rollout_tokens": 3,
+    "counterfactual_action": "right",
+    "delta": 1.0,
+    "factual_action": "left"
+  },
+  "selected_anchor": "trajectory-high-entropy:0",
+  "symbols": {
+    "A_anchor_slots_per_trajectory": 1,
+    "C_candidate_turns": 2,
+    "N_batch_trajectories": 2,
+    "T_padded_tokens": 6
+  },
+  "turn_records": [
+    {
+      "action_prefix": [],
+      "anchor_id": "trajectory-low-entropy:0",
+      "mean_entropy": 0.2,
+      "token_indices": [
+        2,
+        3
+      ]
+    },
+    {
+      "action_prefix": [],
+      "anchor_id": "trajectory-high-entropy:0",
+      "mean_entropy": 1.4,
+      "token_indices": [
+        2,
+        3
+      ]
+    }
+  ]
+}
+ProbeGRPO CPU data-flow smoke test passed
+PYTHONPATH=src python3 -m probegrpo.agent_smoke
+SCRIPTED CPU demo: no model generation or measured entropy
+T=142 response tokens; assistant=4; observation=138
+turn=0 prefix=() action=up assistant_indices=(0, 1) replay_match=True
+#######
+#  .  #
+#  $  #
+#  @  #
+#     #
+#######
+turn=1 prefix=('up',) action=up assistant_indices=(140, 141) replay_match=True
+#######
+#  *  #
+#  @  #
+#     #
+#     #
+#######
+TrajectoryTrace -> 2 TurnRecords (synthetic statistics)
+reward=1.0 stop=terminal
+ProbeGRPO Sokoban episode CPU smoke passed
