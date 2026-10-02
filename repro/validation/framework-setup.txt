@@ -1,0 +1,2 @@
+Pinned ProbeGRPO patch already present
+Verified verl cf14ded3a448107e70a206fd201817cc1cbae348 with the exact ProbeGRPO trainer patch: <fresh-checkout>

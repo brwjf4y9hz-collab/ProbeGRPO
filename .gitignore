@@ -30,3 +30,9 @@ tmp/
 *.tar
 *.tar.gz
 *.zip
+
+# Verification scratch and generated local data
+/repro_outputs/
+**/.ruff_cache/
+.DS_Store
+/data/**/*.parquet

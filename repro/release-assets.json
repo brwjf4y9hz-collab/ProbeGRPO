@@ -1,0 +1,20 @@
+{
+  "tag": "repro-2026-10-02-v1",
+  "assets": [
+    {
+      "name": "evidence-manifest.json",
+      "bytes": 5851307,
+      "sha256": "1364b13a6f81546499eef843b601f5e51f91b1d44bc6ebe8a1148e578ad0b84a"
+    },
+    {
+      "name": "experiment-evidence.tar.gz",
+      "bytes": 54269601,
+      "sha256": "748fffeac66cbae0b009b7dbad3342147e48e106c51b2b9f79d1a3114b6817e3"
+    },
+    {
+      "name": "verl-upstream-cf14ded.tar.gz",
+      "bytes": 2685863,
+      "sha256": "9711ff7bcca176b994d6024266e234c3ebf30d99834edbea2d308a25e2e15bfc"
+    }
+  ]
+}

@@ -7,7 +7,8 @@ if [[ $# -ne 1 ]]; then
 fi
 
 VERL_DIR="$1"
-EXPECTED_COMMIT="${VERL_COMMIT:-cf14ded3a448107e70a206fd201817cc1cbae348}"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+EXPECTED_COMMIT="$(cat "$PROJECT_DIR/repro/verl.commit")"
 
 if [[ ! -f "$VERL_DIR/pyproject.toml" || ! -d "$VERL_DIR/verl" ]]; then
   echo "Not a verl checkout: $VERL_DIR" >&2
@@ -28,6 +29,7 @@ export HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
 "$VERL_DIR/.venv/bin/python" - <<'PY'
 import importlib.metadata
+import os
 
 import torch
 import transformers
@@ -48,7 +50,10 @@ if not torch.cuda.is_available():
 print(f"gpu={torch.cuda.get_device_name(0)}")
 print(f"gpu_memory_gib={torch.cuda.get_device_properties(0).total_memory / 2**30:.1f}")
 
-config = AutoConfig.from_pretrained("Qwen/Qwen3.5-2B")
+config = AutoConfig.from_pretrained(
+    os.environ.get("MODEL_PATH", "Qwen/Qwen3.5-2B"),
+    revision="15852e8c16360a2fea060d615a32b45270f8a8fc",
+)
 print(f"model_type={config.model_type}")
 if config.model_type != "qwen3_5":
     raise SystemExit(f"Unexpected Qwen3.5 model type: {config.model_type}")

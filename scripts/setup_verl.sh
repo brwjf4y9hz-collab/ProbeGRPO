@@ -1,37 +1,40 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
+# Prepare pinned source only. bootstrap_verl.sh also installs the GPU environment.
 set -euo pipefail
-PROJECTDIR="cd "dirname "BASHSOURCE0"/.." && pwd"
-COMMIT="cat "PROJECTDIR/repro/verl.commit""
-PATCH="PROJECTDIR/patches/verl-probegrpo.patch"
-VERLDIR="VERLDIR-PROJECTDIR/../probegrpo-runtime/verl"
-ARCHIVEURL="https//github.com/verl-project/verl/archive/COMMIT.tar.gz"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VERL_DIR="${1:-${VERL_DIR:-$PROJECT_DIR/../probegrpo-runtime/verl}}"
+PINNED_COMMIT="$(cat "$PROJECT_DIR/repro/verl.commit")"
+PINNED_REMOTE="$(cat "$PROJECT_DIR/repro/verl.remote")"
+PATCH_FILE="$PROJECT_DIR/patches/verl-probegrpo.patch"
+TARGET=verl/trainer/ppo/v1/trainer_base.py
+UPSTREAM_BLOB=f5eebc6cdee9b076c41d10693762b57e4f5c750c
+PATCHED_BLOB=8bb3a1a6676c6b53cd29c606c1d10ed8bc552f14
 
-if  -e "VERLDIR"  then
-  if   -d "VERLDIR/.git"  then
-      echo "Refusing to modify existing non-git path VERLDIR" &2
-          exit 2
-            fi
-              actual="git -C "VERLDIR" rev-parse HEAD"
-                if  "actual" = "COMMIT"  then
-                    echo "verl at VERLDIR is actual expected COMMIT. No files changed." &2
-                        exit 2
-                          fi
-                            if git -C "VERLDIR" apply --reverse --check "PATCH" /dev/null 2&1 then
-                                echo "ProbeGRPO patch is already applied in VERLDIR"
-                                    exit 0
-                                      fi
-                                        git -C "VERLDIR" apply --check "PATCH"
-                                          git -C "VERLDIR" apply "PATCH"
-                                          else
-                                            mkdir -p "dirname "VERLDIR""
-                                              tmp="mktemp -d"
-                                                trap 'rm -rf "tmp"' EXIT
-                                                  curl --fail --location --retry 3 "ARCHIVEURL" -o "tmp/verl.tar.gz"
-                                                    mkdir "VERLDIR"
-                                                      tar -xzf "tmp/verl.tar.gz" --strip-components=1 -C "VERLDIR"
-                                                        git -C "VERLDIR" init -q
-                                                          git -C "VERLDIR" apply --check "PATCH"
-                                                            git -C "VERLDIR" apply "PATCH"
-                                                            fi
-                                                            echo "Prepared verl COMMIT with ProbeGRPO patch at VERLDIR"
-                                                            
+if [[ ! -e "$VERL_DIR" ]]; then
+  mkdir -p "$VERL_DIR"
+  git -C "$VERL_DIR" init -q
+  git -C "$VERL_DIR" remote add origin "$PINNED_REMOTE"
+  git -C "$VERL_DIR" fetch --depth 1 origin "$PINNED_COMMIT"
+  git -C "$VERL_DIR" checkout --detach FETCH_HEAD
+fi
+VERL_DIR="$(cd "$VERL_DIR" && pwd -P)"
+if [[ "$(git -C "$VERL_DIR" rev-parse --show-toplevel)" != "$VERL_DIR" ]] || \
+   [[ "$(git -C "$VERL_DIR" rev-parse HEAD)" != "$PINNED_COMMIT" ]]; then
+  echo "Expected a standalone verl checkout at $PINNED_COMMIT: $VERL_DIR" >&2
+  exit 1
+fi
+while IFS= read -r changed; do
+  case "$changed" in "$TARGET"|.gitignore|'') ;; *)
+    echo "Unexpected tracked framework modification: $changed" >&2; exit 1;;
+  esac
+done < <(git -C "$VERL_DIR" diff --name-only HEAD)
+case "$(git hash-object "$VERL_DIR/$TARGET")" in
+  "$PATCHED_BLOB") echo "Pinned ProbeGRPO patch already present" ;;
+  "$UPSTREAM_BLOB")
+    git -C "$VERL_DIR" apply --check "$PATCH_FILE"
+    git -C "$VERL_DIR" apply "$PATCH_FILE"
+    ;;
+  *) echo "Unrecognized trainer contents; preserving existing files" >&2; exit 1 ;;
+esac
+[[ "$(git hash-object "$VERL_DIR/$TARGET")" == "$PATCHED_BLOB" ]]
+echo "Verified verl $PINNED_COMMIT with the exact ProbeGRPO trainer patch: $VERL_DIR"

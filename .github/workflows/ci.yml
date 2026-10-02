@@ -16,6 +16,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e .
-      - run: python -m unittest discover -s tests -v
-      - run: python -m probegrpo.smoke
+      - run: make check
+      - name: Verify pinned framework patch and idempotence
+        if: matrix.python-version == '3.12'
+        run: |
+          bash scripts/setup_verl.sh "$RUNNER_TEMP/verl"
+          bash scripts/setup_verl.sh "$RUNNER_TEMP/verl"
 

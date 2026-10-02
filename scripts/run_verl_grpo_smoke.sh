@@ -10,7 +10,13 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERL_DIR="$1"
 shift
 
-MODEL_PATH="${MODEL_PATH:-Qwen/Qwen3.5-2B}"
+export HF_HOME="${HF_HOME:-$VERL_DIR/data/huggingface}"
+MODEL_REVISION=15852e8c16360a2fea060d615a32b45270f8a8fc
+export MODEL_PATH="${MODEL_PATH:-$HF_HOME/hub/models--Qwen--Qwen3.5-2B/snapshots/$MODEL_REVISION}"
+if [[ ! -f "$MODEL_PATH/config.json" ]]; then
+  echo "Pinned model missing: $MODEL_PATH. See REPRODUCE.md." >&2
+  exit 2
+fi
 DATA_DIR="${DATA_DIR:-$VERL_DIR/data/probegrpo-gsm8k}"
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/outputs/verl-grpo-smoke}"
 TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-5}"

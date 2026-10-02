@@ -12,7 +12,11 @@
   "rollouts_per_prompt": 4,
   "probe_budget": 2,
   "probe_lambda": 0.5,
-  "seeds": [17, 42, 101],
+  "seeds": [
+    17,
+    42,
+    101
+  ],
   "hardware": "1 x NVIDIA GeForce RTX 4090 48 GB",
   "raw_output_roots": [
     "outputs/ablation-bbba7a8-mem25-seed17",
@@ -20,5 +24,8 @@
     "outputs/ablation-main-v1-seed101"
   ],
   "statistic": "mean and sample standard deviation across seeds",
-  "status": "portfolio result; descriptive, not a formal significance claim"
+  "status": "portfolio result; descriptive, not a formal significance claim",
+  "verified_at": "2026-10-02",
+  "numeric_precision": "full precision from raw sidecars and training logs",
+  "historical_rounded_csv": "legacy/per_seed.rounded.csv"
 }

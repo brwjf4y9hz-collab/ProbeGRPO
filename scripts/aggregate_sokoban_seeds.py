@@ -211,7 +211,7 @@ def markdown(aggregates: list[dict]) -> str:
 
 def write_csv(path: Path, rows: list[dict]) -> None:
     with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS)
+        writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS, lineterminator="\n")
         writer.writeheader()
         for row in sorted(rows, key=lambda item: (int(item["seed"]), item["method"])):
             writer.writerow({field: row.get(field, "") for field in CSV_FIELDS})
