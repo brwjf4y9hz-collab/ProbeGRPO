@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 本脚本执行 bootstrap verl 对应的仓库流程；具体参数、环境变量和命令保持原样。
 set -euo pipefail
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 NEW_RUNTIME_DIRECTORY" >&2
@@ -26,7 +27,7 @@ else
 fi
 cd "$VERL_DIR"
 "$UV_BIN" sync --python 3.12.3 --frozen --all-packages --extra vllm --extra fsdp
-# Preserve the upstream lock and the compatibility override used by the recorded run.
+# 保留上游依赖锁文件，以及已记录运行所用的兼容性覆盖项。
 "$UV_BIN" pip install --python "$VERL_DIR/.venv/bin/python" --no-deps 'numpy==2.3.5'
 "$UV_BIN" pip install --python "$VERL_DIR/.venv/bin/python" --no-deps -e "$PROJECT_DIR"
 "$UV_BIN" pip check --python "$VERL_DIR/.venv/bin/python"

@@ -1,4 +1,4 @@
-"""Pack sparse probe credits into the dense layout expected by verl."""
+"""本模块把稀疏 ProbeCredit 转成 verl 使用的稠密张量布局，并严格检查 batch、anchor、token 三个维度及 mask 坐标。"""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ BoolMatrix = Tuple[Tuple[bool, ...], ...]
 
 @dataclass(frozen=True)
 class PackedProbeBatch:
-    """Dependency-free representation of ``[batch, anchors, tokens]`` probe fields."""
+    """以无额外依赖的数据结构表示 ``[batch, anchors, tokens]`` probe 字段。"""
 
     batch_size: int
     anchors_per_sample: int
@@ -32,7 +32,7 @@ class PackedProbeBatch:
         return (self.batch_size, self.anchors_per_sample)
 
     def to_credits(self) -> Tuple[ProbeCredit, ...]:
-        """Recover valid sparse credits for dependency-free CPU validation."""
+        """恢复有效稀疏 credit，供无依赖的 CPU 校验使用。"""
 
         credits = []
         for sample_index in range(self.batch_size):
@@ -62,7 +62,7 @@ def pack_probe_credits(
     token_count: int,
     anchors_per_sample: int,
 ) -> PackedProbeBatch:
-    """Pack valid sparse credits without silently truncating malformed input."""
+    """打包有效稀疏 credit；输入不合法时显式报错，不静默截断。"""
 
     _validate_dimensions(batch_size, token_count, anchors_per_sample)
     masks: List[List[List[bool]]] = [
@@ -127,7 +127,7 @@ def blend_packed_probe_advantages(
     packed: PackedProbeBatch,
     lambda_coef: float = 0.5,
 ) -> List[List[float]]:
-    """Apply a packed batch through the same dependency-free credit implementation."""
+    """通过相同的无依赖 credit 实现处理已打包 batch。"""
 
     if len(base_advantages) != packed.batch_size:
         raise ValueError("base advantage batch dimension does not match packed probes")

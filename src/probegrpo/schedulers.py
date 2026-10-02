@@ -1,5 +1,5 @@
-"""Matched-budget anchor selection strategies."""
-##一条 trajectory 里有很多 turn，到底挑哪几个 turn 去做 expensive counterfactual probe？
+"""本模块实现固定预算下的锚点选择策略，包括随机、chosen-token surprisal 和 LinearUCB；所有策略都从可观测 turn 特征中选点。"""
+# 一条 trajectory 含有多个 turn；本模块决定在固定额外 rollout 预算内选择哪些 turn 做反事实 probe。
 from __future__ import annotations
 
 import math
@@ -13,9 +13,11 @@ FEATURE_DIM = 7
 
 
 def turn_features(turn: TurnRecord) -> Tuple[float, ...]:
-    """Return bounded, interpretable features for online probe-value prediction."""
-##这部分是给后面的 LinearUCBScheduler 用的
-##它把一个 turn 变成 7 维特征
+    """生成有界且可解释的在线 probe 价值预测特征。
+
+    特征仅依赖 rollout 时记录的状态、轮次和 chosen-token surprisal，不读取
+    尚不可得的完整策略分布 entropy。LinearUCB 使用固定长度向量进行打分。
+    """
     entropy = _clip(turn.mean_entropy / 10.0)
     uncertainty = 1.0 / (1.0 + max(0.0, turn.logprob_margin))
     position = _clip(turn.turn_fraction)
@@ -47,7 +49,7 @@ def _eligible(candidates: Iterable[TurnRecord]) -> List[TurnRecord]:##先过滤�
 
 
 class AnchorScheduler(ABC):##这是所有 scheduler 的抽象基类
-    """Select a fixed number of turns without changing the rollout budget."""
+    """在不改变 rollout 预算的前提下选择固定数量的 turn。"""
 
     name = "base"
 
@@ -61,7 +63,7 @@ class AnchorScheduler(ABC):##这是所有 scheduler 的抽象基类
         raise NotImplementedError
 
     def observe(self, turn: TurnRecord, result: ProbeResult) -> None:
-        """Optionally learn from the measured value of a selected anchor."""
+        """可选地根据已选锚点测得的价值更新调度器。"""
         return None
 
 
@@ -108,11 +110,13 @@ class EntropyScheduler(AnchorScheduler):##越不确定的 turn，越值得花 pr
 
 
 class LinearUCBScheduler(AnchorScheduler):##边训练边学习：什么样的 turn 最值得 probe
-    """Online cost-aware anchor scheduler using Sherman-Morrison updates.
-  ##cost-aware
+    """使用 Sherman-Morrison 更新的在线成本感知锚点调度器。
     The regression target is ``abs(delta_reward) / additional_rollout_tokens``. During warm-up,
     anchors are sampled across early/middle/late trajectory thirds. After warm-up, LinearUCB ranks
     candidates, while ``exploration_rate`` reserves occasional random batches.
+    每次观测到 probe 结果后更新线性模型的逆协方差近似；分数中同时考虑
+    预测价值、不确定性探索项和估计 token 成本。此策略属于启发式调度器，
+    不提供无偏因果估计保证。
     """
 
     name = "linear_ucb"
@@ -207,7 +211,7 @@ class LinearUCBScheduler(AnchorScheduler):##边训练边学习：什么样的 tu
         self.observations += 1
 
     def _stratified_sample(self, eligible: Sequence[TurnRecord], count: int) -> List[TurnRecord]:
-        ##warmup 阶段别只采轨迹前面或者后面，保证位置覆盖比较均匀
+        # warmup 阶段按位置分层抽样，避免样本只落在轨迹开头或结尾。
         buckets = {0: [], 1: [], 2: []}
         for turn in eligible:
             bucket = min(2, int(_clip(turn.turn_fraction) * 3))
@@ -224,7 +228,7 @@ class LinearUCBScheduler(AnchorScheduler):##边训练边学习：什么样的 tu
 
 
 def choose_alternative_action(turn: TurnRecord, seed: Optional[int] = None) -> Optional[str]:
-    """Choose a reproducible legal action different from the factual action."""
+    """以可复现方式选择一个与事实动作不同的合法动作。"""
 
     alternatives = sorted(set(turn.legal_actions) - {turn.action})
     if not alternatives:

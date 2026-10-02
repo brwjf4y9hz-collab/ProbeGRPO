@@ -1,4 +1,4 @@
-"""Deterministic environment replay primitives."""
+"""本模块定义可回放环境协议、规范化状态哈希和动作前缀重放。哈希用于检测状态不一致，不单独证明环境隐藏状态或外部副作用完全一致。"""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from .types import ReplayState
 
 
 def canonical_state_hash(state: Any) -> str:
-    """Return a deterministic SHA-256 hash for JSON-compatible environment state."""
+    """为 JSON 兼容的环境状态生成确定性的 SHA-256 哈希。"""
 
     payload = json.dumps(
         state,
@@ -32,7 +32,7 @@ def _json_default(value: Any) -> Any:
 
 
 class ReplayableEnv(ABC):
-    """Minimal contract required for exact counterfactual prefix replay.
+    """精确反事实前缀回放所需的最小环境协议。
 
     Implementations must make ``reset(task_id, seed)`` deterministic. The default ``replay``
     method intentionally re-executes public actions instead of relying on unsafe object copies.
@@ -58,7 +58,7 @@ class ReplayableEnv(ABC):
 
 
 class ReplayError(RuntimeError):
-    """Raised when an action prefix cannot be replayed safely."""
+    """动作前缀无法安全重放时抛出的异常。"""
 
 
 def state_from_mapping(
@@ -68,7 +68,7 @@ def state_from_mapping(
     terminal: bool = False,
     reward: float = 0.0,
 ) -> ReplayState:
-    """Convenience helper for adapters around third-party environments."""
+    """供第三方环境适配器使用的便捷状态构造函数。"""
 
     return ReplayState(
         observation=observation,

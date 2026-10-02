@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write immutable run metadata before a public Sokoban experiment starts."""
+"""在公开 Sokoban 实验开始前记录固定运行元数据，便于追踪代码版本和配置。"""
 
 from __future__ import annotations
 

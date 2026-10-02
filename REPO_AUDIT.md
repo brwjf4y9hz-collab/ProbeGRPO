@@ -1,56 +1,39 @@
-# Repository and storage audit — 2026-10-02
+# 仓库与存储盘点 — 2026-10-02
 
-## Scope and Git state
+## 检查范围与 Git 状态
 
-Live GitHub and the original AutoDL server were inspected. At intake, `origin/main`
-was `00b802e9f24e18973c4b8e45b05195865c34e5eb`; the server checkout and
-`origin/codex/verl-gpu-bootstrap` were `0d3ef33424fea24661652db638d0680e4619595f`.
-The server project had no tracked modifications or nonignored untracked files.
-Ignored data, outputs, environments and framework changes did exist. The preservation
-branch incorporates the framework provenance commit before making the changes below.
-No original server run directory or existing branch history was deleted or rewritten.
+检查了在线 GitHub 和原始 AutoDL 服务器。整理开始时 `origin/main` 位于 `00b802e9f24e18973c4b8e45b05195865c34e5eb`；服务器 checkout 与 `origin/codex/verl-gpu-bootstrap` 位于 `0d3ef33424fea24661652db638d0680e4619595f`。服务器项目没有已跟踪改动或未被忽略的未跟踪文件，但存在被忽略的数据、输出、环境和框架改动。保存分支在后续变更前包含框架来源记录的 commit。没有删除或改写原始服务器运行目录或既有分支历史。
 
-## What existed where
+## 各类文件原先的位置与处理方式
 
-| Material | GitHub at intake | Original server / local backup | Treatment |
+| 内容 | 整理前 GitHub | 原始服务器 / 本地备份 | 处理方式 |
 |---|---|---|---|
-| Project source, tests, configs, scripts, experiment notes, result CSV/SVG | Present | Present | Git; retain established directories and working import paths |
-| Current framework source | Not vendored at HEAD | Separate runtime checkout | Immutable upstream SHA + small reviewed patch + setup script |
-| Framework local changes | Historical diff on branch | Trainer hook plus `.gitignore`; untracked backup/data | Canonical trainer patch; full original diff retained in historical archive |
-| Actual training package versions | Missing (old freeze was Conda base) | Training `.venv` available | Capture `repro/runtime-observed.txt` and JSON; use upstream lock + explicit override to install |
-| Raw trajectories and logs | Ignored | 20,399 evidence files recovered | Separate evidence archive and file hashes; rebuild summaries from these records |
-| All outputs including early checkpoint | Ignored | 9,982,019,944 logical bytes; 20,411 regular files + one symlink | Full separate backup; see artifact catalog for transfer/verification status |
-| Main experiment final weights | Absent | **Never saved** (`save_freq=-1`) | Cannot recover; rerun training. New launcher saves the final checkpoint by default |
-| Early GSM8K GRPO step-6 checkpoint | Absent | Present, ~9.4 GB with optimizer | Full output archive; this is not a main-result model or a portable LoRA adapter |
-| Qwen base model | Absent | Complete 13-file fixed snapshot | Upstream immutable revision + SHA-256 manifest; independent local backup |
-| RAGEN raw and prepared data | Absent | Nine files captured | Pinned source downloads + checksums + preprocessing script; separate backup |
-| Environments, caches, Ray sessions, bytecode | Ignored | Present | Rebuild; do not commit |
-| Prior recovery bundles and exports | Not runtime source | Present | Keep in backup storage; do not mix into source tree |
+| 项目源码、测试、配置、脚本、实验记录、结果 CSV/SVG | 已有 | 已有 | 保留在 Git，沿用现存目录和有效导入路径 |
+| 当前框架源码 | HEAD 未 vendoring | 独立运行目录 | 固定上游 SHA，提供最小审阅 patch 和安装脚本 |
+| 框架本地改动 | 分支中有历史 diff | trainer hook、`.gitignore`、未跟踪备份/数据 | 用规范 trainer patch 表示；原始完整 diff 放入历史归档 |
+| 实际训练依赖版本 | 缺失，旧 freeze 来自 Conda base | 训练 `.venv` 可读取 | 记录 `repro/runtime-observed.txt` 和 JSON；安装时使用上游锁并显式覆盖 |
+| 原始轨迹和日志 | 被 Git 忽略 | 恢复 20,399 个证据文件 | 单独证据归档并保存文件哈希，可据此重建汇总 |
+| 所有输出（含早期 checkpoint） | 被 Git 忽略 | 逻辑大小 9,982,019,944 字节；20,411 个普通文件和一个符号链接 | 完整独立备份；传输与校验状态见制品目录 |
+| 主实验最终权重 | 不存在 | **从未保存**（`save_freq=-1`） | 无法找回，须重跑；新启动器默认保存最终 checkpoint |
+| 早期 GSM8K GRPO step-6 checkpoint | 不存在 | 存在，含优化器约 9.4 GB | 完整输出归档；它不是主结果模型，也不是便携 LoRA adapter |
+| Qwen 基础模型 | 不存在 | 固定快照 13 个文件完整 | 上游固定 revision + SHA-256 清单；另有本地备份 |
+| RAGEN 原始和预处理数据 | 不存在 | 已保存九个文件 | 固定来源下载 + 校验和 + 预处理脚本；另有独立备份 |
+| 环境、缓存、Ray session、字节码 | 被忽略 | 存在 | 重新构建，不提交 |
+| 旧恢复包和导出文件 | 非运行源码 | 存在 | 保留在备份存储中，不混入源码目录 |
 
-The inspection covers this server, live remote branches and identified local backups.
-It cannot prove that unrelated laptops or other servers contain no additional edits.
+检查范围包含此服务器、在线分支和已找到的本地备份；无法证明其他笔记本或服务器没有额外修改。
 
-## Directory policy
+## 目录规范
 
-- `src/`, `tests/`, `configs/`, `scripts/`: maintained implementation and executable workflows.
-- `docs/`, `experiments/`: explanations, protocols and small visible results.
-- `patches/`: only ProbeGRPO's framework modification.
-- `repro/`: immutable pins, manifests, observed environment and validation records.
-- `repro/archive-20260929/`: old provenance retained with its limitations labeled.
-- `outputs/`, `models/`, `data/`, caches, checkpoints, archives: ignored storage outside Git.
+- `src/`、`tests/`、`configs/`、`scripts/`：维护中的实现和可执行流程。
+- `docs/`、`experiments/`：说明文档、实验协议和小型公开结果。
+- `patches/`：仅保留 ProbeGRPO 对框架的改动。
+- `repro/`：不可变版本号、manifest、已观测环境和核验记录。
+- `repro/archive-20260929/`：保留旧来源证据，并标注其局限。
+- `outputs/`、`models/`、`data/`、缓存、checkpoint、归档：放在 Git 外并加入忽略规则。
 
-No submodule is required. The installer creates a separate pinned upstream checkout,
-checks its identity and exact trainer content, and applies the patch once. A full
-vendored framework would obscure the modification and duplicate upstream history.
-Older Git history may still contain the previously vendored source; this cleanup
-changes the current tree without destructive history rewriting. Weights and archives
-are excluded from new commits; model artifacts remain external.
+不需要 submodule。安装器会在独立目录获取固定上游 checkout，核验其身份和 trainer 内容，再应用 patch。整个 vendoring 框架会掩盖实际修改并重复上游历史。旧 Git 历史仍可能含以前 vendoring 的源码；本次清理只整理当前 tree，没有破坏性改写历史。新 commit 不含模型权重或归档，模型制品继续存放在外部。
 
-## Reproduction judgment
+## 复现判断
 
-CPU flow, existing result reconstruction, model integrity, framework patch application,
-and deterministic prepared-data reconstruction have distinct verification records.
-**A fresh GPU environment and a fresh training run have not been demonstrated in this
-cleanup.** The server was in CPU maintenance mode without an allocated GPU. Historical
-training evidence is retained and matched; it is not a fresh training reproduction.
-See [REPRODUCE.md](REPRODUCE.md) and [validation](repro/validation/README.md).
+CPU 数据流、已有结果重建、模型完整性、框架 patch 应用和确定性预处理数据重建都有各自的核验记录。**本次整理没有演示全新 GPU 环境安装和重新训练。**服务器当时处于 CPU 维护状态，没有分配 GPU。历史训练证据已保存并重新核对，但这不是全新训练复现。详见 [REPRODUCE.md](REPRODUCE.md) 与[核验记录](repro/validation/README.md)。

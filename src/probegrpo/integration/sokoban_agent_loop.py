@@ -1,4 +1,4 @@
-"""Pinned-verl AgentLoop adapter; importing this module requires the GPU runtime."""
+"""本模块把 ProbeGRPO episode 驱动器接入固定版本 verl AgentLoop，记录 sidecar，并在 trainer 后续阶段把 probe credit 写入优势张量。"""
 
 from __future__ import annotations
 
@@ -91,7 +91,7 @@ class VerlTokenIO:
 
 
 class SokobanAgentLoop(AgentLoopBase):
-    """Uses real model generations and environment reward, without a language-model judge."""
+    """使用真实模型生成和环境奖励，不通过语言模型裁判打分。"""
 
     async def run(self, sampling_params, priority=0, **kwargs):
         info = kwargs.get("extra_info", {})
@@ -126,7 +126,7 @@ class SokobanAgentLoop(AgentLoopBase):
             "scheduler": str(probe_settings.get("scheduler", "none")),
             "lambda_coef": float(probe_settings.get("lambda_coef", 0.0)),
         }
-        # The trainer applies saved credit after standard GRPO advantage calculation.
+        # trainer 在标准 GRPO 优势计算完成后应用已保存的局部 credit。
         if mode.run_probe:
             probe = await self._probe(
                 episode,
@@ -140,7 +140,7 @@ class SokobanAgentLoop(AgentLoopBase):
             probe["credit_requested"] = mode.credit_requested
             probe["advantage_applied"] = False  # The actor update has not happened yet.
             payload["debug_probe"] = probe
-        # Standard verl JSONL omits custom extra_fields. Keep a separate per-episode sidecar.
+        # verl 标准 JSONL 不保存自定义 extra_fields，因此每个 episode 单独写入 sidecar。
         root = Path(self.config.trainer.rollout_data_dir) / "episodes" / f"step-{step}"
         root.mkdir(parents=True, exist_ok=True)
         filename = hashlib.sha256(trajectory_id.encode()).hexdigest() + ".json"
@@ -234,6 +234,6 @@ class SokobanAgentLoop(AgentLoopBase):
             "scheduler": anchor.scheduler,
             "scheduler_turn": serialized_scheduler_turn(anchor),
         }
-        # Count actual extra model-generated tokens, including failed probes.
+        # 统计实际额外生成的模型 token，失败 probe 消耗的 token 也计入成本。
         payload["additional_rollout_tokens"] = sum(io.generated_tokens for io in probe_ios)
         return payload

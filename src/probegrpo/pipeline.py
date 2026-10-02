@@ -1,4 +1,4 @@
-"""Framework-independent orchestration of scheduler, replay probes, and local credits."""
+"""本模块串联 anchor 调度、环境回放和局部 credit 生成，并限制每组轨迹的 probe 次数与额外 rollout token 预算。"""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ class ProbeBatchOutcome:
 
 
 class ProbePipeline:
-    """Execute no more than one configured probe budget for a trajectory group."""
+    """对一组轨迹执行不超过配置预算的 probe。"""
 
     def __init__(
         self,

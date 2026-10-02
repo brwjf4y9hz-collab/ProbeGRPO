@@ -1,4 +1,4 @@
-"""Framework-independent rollout traces and ``TurnRecord`` extraction."""
+"""本模块定义框架无关的 rollout 轨迹结构，并将助手轮次转换为带状态哈希、动作前缀和 token 坐标的 TurnRecord。"""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .types import TurnRecord
 
 @dataclass(frozen=True)
 class RawAssistantTurn:
-    """Minimal data captured for one assistant action during a rollout.
+    """rollout 中每个助手动作所记录的最小数据。
 
     ``token_indices`` refers to positions in the padded trainer sequence. Entropies and top-two
     log-probabilities are aligned one-to-one with those positions.
@@ -29,7 +29,7 @@ class RawAssistantTurn:
 
 @dataclass(frozen=True)
 class TrajectoryTrace:
-    """One completed trajectory before it is converted into scheduler records."""
+    """转换为调度器记录前的一条完整轨迹。"""
 
     trajectory_id: str
     task_id: str
@@ -41,7 +41,7 @@ class TrajectoryTrace:
 
 
 def extract_turn_records(trace: TrajectoryTrace) -> List[TurnRecord]:
-    """Validate a trajectory and derive one replayable record per assistant turn."""
+    """校验一条轨迹，并为每个助手轮次生成可回放记录。"""
 
     _validate_trace_header(trace)
     suffix_token_counts = _suffix_token_counts(trace.turns)

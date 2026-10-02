@@ -1,68 +1,44 @@
-# ProbeGRPO technical report
+# ProbeGRPO 技术报告
 
-> Status: complete three-seed public-Sokoban portfolio result; WebShop is an optional extension.
+> 状态：已完成公开 Sokoban 三种子作品集实验；WebShop 属于可选扩展。
 
-## Abstract
+## 摘要
 
-Long-horizon language-model agents normally receive a terminal reward for an entire trajectory.
-GRPO can compare sampled trajectories for the same prompt, but every generated action token in one
-trajectory still receives the same trajectory-level signal. ProbeGRPO adds a bounded amount of
-environment interaction: it selects a small number of assistant turns, deterministically replays
-the action prefix, substitutes a legal alternative action, and converts the factual-minus-
-counterfactual terminal-reward difference into credit for only the selected turn. The system is
-implemented on current verl with a Qwen3.5-2B LoRA actor and a replayable Sokoban AgentLoop.
+长程语言模型 Agent 通常只会得到整条轨迹的终局奖励。GRPO 能比较同一 prompt 下采样出的多条轨迹，但同一轨迹中每个生成的动作 token 仍共享轨迹级信号。ProbeGRPO 增加有限的环境交互预算：选取少数 assistant turn，确定性重放其动作前缀，替换一个合法动作，再把事实分支与反事实分支的终局奖励差只用于该 turn。系统在当前 verl 上实现，使用 Qwen3.5-2B LoRA actor 和可重放的 Sokoban AgentLoop。
 
-On a checksum-pinned public RAGEN Sokoban split, four methods were trained for 50 updates using
-three random seeds. LinearUCB-B2 increased held-out success from `24.0% +/- 2.0%` for GRPO to
-`31.0% +/- 1.2%`, a paired improvement of `7.0 +/- 0.8` percentage points, while adding `51.6%`
-rollout tokens. Surprisal-B2 reached a similar mean at higher cost; Random-B2 was less stable. These
-results establish a reproducible engineering result, not statistical significance or a claim that
-counterfactual credit assignment is new.
+在固定校验和的公开 RAGEN Sokoban 划分上，四种方法各训练 50 个 update、使用三个随机种子。LinearUCB-B2 的 held-out 成功率从 GRPO 的 `24.0% ± 2.0%` 提高至 `31.0% ± 1.2%`，配对提升 `7.0 ± 0.8` 个百分点，额外 rollout token 为 `51.6%`。Surprisal-B2 的均值相近但成本更高；Random-B2 的波动更大。这些结果支持一个可复现的工程结果，不构成统计显著性结论，也不声称反事实 credit assignment 本身是新颖的。
 
-## 1. Problem and design objective
+## 1. 问题与设计目标
 
-For an episode with assistant turns `a_1 ... a_T` and final reward `R`, trajectory-level GRPO assigns
-one relative trajectory advantage to every response token. This is inexpensive but coarse: a
-correct early action in a failed episode is penalized with later mistakes, while irrelevant actions
-in a successful episode receive positive credit.
+对包含 assistant turns `a_1 ... a_T`、最终奖励为 `R` 的 episode，trajectory-level GRPO 会把同一个相对轨迹 advantage 分配给所有 response token。这样做成本低，但信号较粗：失败轨迹中的正确早期动作会被后续错误一起惩罚，成功轨迹中的无关动作却会一起得到正向信号。
 
-ProbeGRPO asks a narrower engineering question: under a fixed additional rollout budget, can real
-environment replay provide useful turn-local credit without an LLM judge? The design requirements
-are:
+ProbeGRPO 聚焦一个较窄的工程问题：在固定额外 rollout 预算下，真实环境重放能否在不使用 LLM judge 的情况下提供有用的 turn-local 信号？设计要求如下：
 
-1. factual and counterfactual suffixes start from an identical verified state;
-2. extra rollout cost is explicitly measured in generated tokens;
-3. probe credit changes only the selected assistant turn;
-4. budget zero and credit coefficient zero exactly recover ordinary GRPO;
-5. scheduler comparisons use identical main-rollout, dataset, model, and training budgets.
+1. 事实与反事实后缀必须从同一个经过验证的状态开始；
+2. 明确记录额外 rollout token 成本；
+3. probe credit 只修改选中的 assistant turn；
+4. budget 为零或 credit 系数为零时，精确回退到普通 GRPO；
+5. 调度器比较使用相同的主 rollout、数据集、模型和训练预算。
 
-## 2. System
+## 2. 系统
 
-### 2.1 Main AgentLoop
+### 2.1 主 AgentLoop
 
-Each update samples four prompts and four trajectories per prompt. The Qwen actor emits one legal
-action string per assistant turn; Sokoban returns the next board as an environment observation.
-Each recorded turn includes the action prefix before the current action, state hash, legal actions,
-sampled action-token log probabilities, response-token indices, validity, and final trajectory
-reward. Environment observations occupy response positions but have an assistant mask of zero.
+每个 update 对四个 prompt 各采样四条轨迹。Qwen actor 在每个 assistant turn 生成一个动作字符串；Sokoban 将新棋盘作为环境 observation 返回。每条 turn 记录当前动作之前的 action prefix、state hash、合法动作、所采动作 token 的 log-probability、response token 索引、动作是否合法及最终轨迹奖励。环境 observation 也占 response 位置，但其 assistant mask 为零。
 
-### 2.2 Counterfactual probe
+### 2.2 反事实 probe
 
-For an anchor turn `t`, two fresh environments reset to the same task ID and seed, then replay
-`a_1 ... a_(t-1)`. The probe is discarded if either reconstructed observation or state hash differs
-from the recorded anchor. The factual branch executes `a_t`; the counterfactual branch executes a
-different legal action. Both then generate suffixes under the same sampling seed. Credit is
+对 anchor turn `t`，创建两个新环境，使用同一 task ID 和 seed 重置，再重放 `a_1 ... a_(t-1)`。如果重建的 observation 或 state hash 与记录不一致，就丢弃该 probe。事实分支执行 `a_t`；反事实分支执行另一个合法动作。随后两个分支都用相同的采样 seed 生成后缀。局部差值为：
 
 ```text
 delta_t = factual_terminal_reward - counterfactual_terminal_reward
 ```
 
-A positive delta means the original action was better than the tested alternative; a negative
-delta means the alternative was better. Zero delta is valid evidence but produces no update.
+正值表示原始动作在本次被测条件下优于所选替代动作；负值表示替代动作更好。零差值属于有效观测，但不会产生更新增量。
 
-### 2.3 Advantage integration
+### 2.3 Advantage 接入
 
-The sidecar converts sparse probe records to dense tensors:
+Sidecar 将稀疏 probe 记录转换为稠密张量：
 
 ```text
 probe_turn_masks [N, A, T]
@@ -70,112 +46,81 @@ probe_deltas     [N, A]
 probe_valid      [N, A]
 ```
 
-After verl computes standard GRPO advantages and before the actor update, ProbeGRPO applies
+verl 算完标准 GRPO advantage 后、actor update 前，ProbeGRPO 应用：
 
 ```text
 A_final = A_GRPO + lambda * normalize(delta) * turn_mask
 ```
 
-with `lambda=0.5`. The mask covers only the selected assistant action tokens, never prompts,
-environment observations, padding, or other turns. The integration is tested for exact fallback
-when budget is zero, lambda is zero, no probe is valid, or all deltas are zero.
+其中 `lambda=0.5`。Mask 只覆盖选中 assistant action token，不包含 prompt、环境 observation、padding 或其他 turn。现有集成测试覆盖 budget 为零、lambda 为零、无有效 probe 和 delta 全为零时的回退行为。
 
-### 2.4 Schedulers
+### 2.4 调度器
 
-- **Random-B2:** position-stratified random turn selection.
-- **Surprisal-B2:** prioritizes sampled actions with high chosen-token surprisal. It is not called
-  entropy because the rollout backend does not expose the full next-token distribution.
-- **LinearUCB-B2:** an online linear contextual bandit estimating absolute probe delta per extra
-  rollout token with an uncertainty bonus and random warm-up.
+- **Random-B2：**按轨迹位置分层随机选择 turn。
+- **Surprisal-B2：**优先选择 chosen-token surprisal 高的动作。此处不称作 entropy，因为 rollout 后端没有提供完整 next-token 分布。
+- **LinearUCB-B2：**在线线性 contextual bandit，根据额外 rollout token 归一化后的绝对 probe delta 估计价值，并加入不确定性 bonus 和随机 warm-up。
 
-Budget two currently chooses the first two of four sampled episodes in a prompt group and then one
-turn within each chosen episode. Group-wide top-B episode-and-turn selection remains future work.
+当前 budget=2 的实现会在每个 prompt group 的四条轨迹中先选择前两条，再在每条选中轨迹内选一个 turn。整组 episode/turn 候选的全局 top-B 选择尚未实现。
 
-## 3. Experimental setup
+## 3. 实验配置
 
-| Component | Setting |
+| 组件 | 设置 |
 |---|---|
-| Policy | `Qwen/Qwen3.5-2B` |
-| Adaptation | BF16 LoRA, rank 32, alpha 64 |
-| Trainer | current verl, FSDP2 actor and vLLM rollout |
-| Hardware | one RTX 4090 48 GB |
-| Dataset | pinned public RAGEN Sokoban release |
-| Split | 512 train / 128 held-out test boards |
-| Leakage control | board-layout deduplication and zero train/test overlap |
-| Horizon | 12 actions; every selected board verified solvable by exact BFS |
-| Training | 50 updates, 16 main trajectories per update |
-| Probe | budget 2, lambda 0.5 |
-| Seeds | 17, 42, 101 |
+| 策略模型 | `Qwen/Qwen3.5-2B` |
+| 参数高效微调 | BF16 LoRA，rank 32，alpha 64 |
+| Trainer | 当前 verl，FSDP2 actor 与 vLLM rollout |
+| 硬件 | 单张 RTX 4090 48 GB |
+| 数据集 | 固定版本的公开 RAGEN Sokoban 数据 |
+| 划分 | 512 个训练棋盘 / 128 个 held-out 测试棋盘 |
+| 泄漏控制 | 棋盘布局去重，训练集与测试集无布局重叠 |
+| Horizon | 12 步；每个选中的棋盘都由精确 BFS 确认为可解 |
+| 训练 | 50 个 update，每次 16 条主轨迹 |
+| Probe | budget 2，lambda 0.5 |
+| Seeds | 17、42、101 |
 
-The exact model, verl, and dataset revisions are stored in
-`experiments/results/public_sokoban_main_v1/metadata.json`. All four methods use the same public
-split and main rollout budget. Raw traces include run manifests, resolved Hydra configurations,
-trainer logs, standard rollout JSONL, and one full episode sidecar per trajectory.
+模型、verl 和数据 revision 记录在 `experiments/results/public_sokoban_main_v1/metadata.json`。四种方法使用相同公开划分和主 rollout 预算。原始轨迹包括运行 manifest、解析后的 Hydra 配置、trainer 日志、标准 rollout JSONL 及每条轨迹的 episode sidecar。
 
-## 4. Results
+## 4. 结果
 
-Values are mean plus or minus sample standard deviation across three seeds.
+下表是三个 seed 的均值和样本标准差。
 
-| Method | Final success | Paired uplift vs GRPO | Extra rollout tokens | Valid probes | High-impact / 1k tokens |
+| 方法 | 最终成功率 | 相对 GRPO 的配对提升 | 额外 rollout token | 有效 probe | 每千 token 高影响 anchor |
 |---|---:|---:|---:|---:|---:|
-| GRPO | 24.0% +/- 2.0% | - | 0.0% | 0/0 | - |
-| Random-B2 | 29.2% +/- 4.6% | +5.2 +/- 6.5 pp | 51.2% | 1140/1200 | 11.93 |
-| Surprisal-B2 | 31.2% +/- 3.4% | +7.3 +/- 4.3 pp | 57.3% | 1142/1200 | 10.44 |
-| LinearUCB-B2 | 31.0% +/- 1.2% | +7.0 +/- 0.8 pp | 51.6% | 1138/1200 | 11.32 |
+| GRPO | 24.0% ± 2.0% | - | 0.0% | 0/0 | - |
+| Random-B2 | 29.2% ± 4.6% | +5.2 ± 6.5 个百分点 | 51.2% | 1140/1200 | 11.93 |
+| Surprisal-B2 | 31.2% ± 3.4% | +7.3 ± 4.3 个百分点 | 57.3% | 1142/1200 | 10.44 |
+| LinearUCB-B2 | 31.0% ± 1.2% | +7.0 ± 0.8 个百分点 | 51.6% | 1138/1200 | 11.32 |
 
-LinearUCB improves over GRPO in all three matched seeds: 9, 10, and 8 additional successful test
-episodes out of 128. Random has one large gain, one small gain, and one tie, producing substantially
-higher variance. Surprisal has the highest numerical mean by 0.2 points, but this difference is
-negligible compared with seed variation and comes with 5.6 points more rollout overhead than
-LinearUCB.
+LinearUCB 在三个配对种子上都高于 GRPO：测试成功数分别多 9、10、8 道（每个种子共 128 道）。Random 在一个 seed 上提升很大，一个 seed 上小幅提升，另一个持平，因此整体波动更高。Surprisal 的数值均值高 0.2 个百分点，但与 seed 波动相比很小，且 rollout 成本比 LinearUCB 高 5.6 个百分点。
 
-The scheduler diagnostic does not support the original hypothesis that LinearUCB discovers more
-high-impact anchors per probe token. Random scores `11.93` versus `11.32` for LinearUCB. A plausible
-interpretation is that the binary high-impact count ignores delta sign, training relevance, and
-where the turn occurs, while LinearUCB's more consistent credits still reduce outcome variance.
-That interpretation remains a hypothesis, not a measured causal explanation.
+调度器诊断不支持原先“LinearUCB 每单位 probe token 找到更多高影响 anchor”的假设。Random 平均为 `11.93`，LinearUCB 为 `11.32`。一种可能解释是二元 high-impact 计数没有考虑 delta 符号、训练相关性和 turn 位置，而 LinearUCB 的 credit 更稳定；但目前这仍是待检验解释，不能当作因果结论。
 
-## 5. Engineering failures and fixes
+## 5. 工程故障与修复
 
-The result required several failures to be isolated and documented:
+完成实验前，团队定位并记录了以下问题：
 
-- Hugging Face downloads failed in AutoDL no-card mode; network acceleration, disabled Xet, and a
-  persistent cache made preparation restartable.
-- Full-vocabulary entropy exhausted GPU memory with an 11.97 GiB allocation; chunked entropy,
-  bounded token batches, and a shorter response cap fixed it.
-- Colocated vLLM reservation killed the FSDP actor during weight synchronization; lowering vLLM
-  utilization from 0.45 to 0.25 restored transient headroom.
-- Verl padded 16 real trajectories to 32 because of an incompatible PPO mini-batch multiple; the
-  final mini-batch size of four matches 16 real rows and avoids fabricating probe sidecars.
-- A failed Random-B2 directory remains preserved and is excluded only because it lacks final-step
-  sidecars. The summarizer tests this rule.
+- AutoDL 无卡模式下 Hugging Face 下载失败；启用网络加速、禁用 Xet 并使用持久化缓存后，下载可恢复。
+- 全词表 entropy 计算曾触发 11.97 GiB 显存申请并耗尽显存；分块计算、限制 token batch 和缩短 response 上限后恢复。
+- vLLM 与 FSDP actor 同机预留显存导致权重同步期间 actor 被杀；将 vLLM utilization 从 0.45 降至 0.25 后恢复余量。
+- verl 因 PPO mini-batch 倍数不兼容，将 16 条真实轨迹补齐到 32；最终将 mini-batch size 设为 4，正好对应 16 行，避免生成没有 sidecar 的伪训练行。
+- 一个失败的 Random-B2 目录仍被保留；汇总器只排除没有达到声明最终 step 的运行。
 
-The full chronology and commands are in
-`experiments/environment/2026-09-21-public-ablation-incidents.md`.
+完整时间线和命令见 `experiments/environment/2026-09-21-public-ablation-incidents.md`。
 
-## 6. Limitations
+## 6. 局限
 
-1. Three seeds are enough to show repeatability for a portfolio, but not enough for a formal
-   significance claim.
-2. LinearUCB exceeds the original `1.5x` rollout-token ceiling by 1.7 percentage points.
-3. The current probe budget is episode-first rather than a true group-wide top-B decision.
-4. Binary Sokoban terminal reward makes many counterfactual branches reward-equivalent and gives a
-   coarse scheduler target.
-5. Prefix replay requires deterministic, enumerable-action environments; browser environments need
-   additional session and hidden-state controls.
-6. A local factual-minus-one-alternative delta is not the full causal contribution of a turn.
-7. Seed 17's retained GRPO arm predates the final mini-batch padding fix. Its synthetic rows carried
-   zero loss masks, but rerunning that arm is required for paper-level configuration identity.
+1. 三个 seed 足以作为作品集中的重复性记录，但不足以作正式显著性声明。
+2. LinearUCB 的 rollout token 成本比原先 `1.5x` 上限高 1.7 个百分点。
+3. 当前 probe budget 先按 episode 选样本，还不是全组 top-B。
+4. Sokoban 使用二元终局奖励，因此很多 counterfactual 分支结果相同，调度器目标较粗。
+5. 前缀重放依赖确定性和可枚举动作；迁移到浏览器环境还需要控制 session 和隐藏状态。
+6. 一个事实动作与一个替代动作的局部差值不是该 turn 的完整因果贡献。
+7. 保留的 seed 17 GRPO 运行早于最终 PPO mini-batch padding 修正。虽然合成行的 loss mask 为零，但论文级配置一致性仍需重跑该 baseline。
 
-## 7. Reproduction and portfolio use
+## 7. 复现与作品集使用
 
-Run CPU correctness checks with `make check`. Generate the committed aggregate and vector figure
-with `make results`. Formal GPU runs use `scripts/run_sokoban_ablation.sh`; exact commands and paths
-are described in `experiments/README.md`.
+运行 `make check` 可检查 CPU 正确性；运行 `make results` 可重新生成已提交的汇总与矢量图。正式 GPU 实验由 `scripts/run_sokoban_ablation.sh` 启动，具体命令见 `experiments/README.md`。
 
-The strongest honest resume claim is the stable paired LinearUCB result, not scheduler dominance:
+目前最稳妥的简历描述应强调 LinearUCB 配对结果的稳定性，而不是调度器优越性：
 
-> Built ProbeGRPO, a Qwen3.5 Agent-RL system on current verl with deterministic counterfactual
-> replay, budget-aware anchor scheduling, and turn-local advantage shaping; improved public
-> Sokoban success from 24.0% +/- 2.0% to 31.0% +/- 1.2% across three seeds while measuring a
-> 1.516x rollout-token cost.
+> 在当前 verl 上构建了 ProbeGRPO Qwen3.5 Agent-RL 系统，支持确定性 counterfactual 重放、预算感知 anchor 选点和 turn-local advantage shaping；公开 Sokoban 三种子成功率从 24.0% ± 2.0% 提升到 31.0% ± 1.2%，额外 rollout token 成本为 1.516 倍。

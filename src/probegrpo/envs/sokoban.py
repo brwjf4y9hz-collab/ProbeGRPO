@@ -1,4 +1,4 @@
-"""Small two-dimensional Sokoban fixtures; not a published benchmark distribution."""
+"""本模块提供小型确定性 Sokoban 环境，用于接入和回放验证。手工关卡不代表公开 benchmark 的完整数据分布。"""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ ACTIONS = {"up": (-1, 0), "down": (1, 0), "left": (0, -1), "right": (0, 1)}
 
 
 class SokobanEnv(ReplayableEnv):
-    """One box, immutable walls/goals, sparse success reward, bounded action attempts.
+    """单箱环境，墙体/目标不可变，成功时给稀疏奖励，动作尝试次数有上限。
 
     Invalid text or blocked moves consume one step. State hashes include the complete
     transition state, level identity and horizon, not just the rendered observation.

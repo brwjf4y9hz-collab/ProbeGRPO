@@ -1,4 +1,4 @@
-"""A dependency-free Sokoban micro-environment for replay and CI tests."""
+"""本模块实现无第三方依赖的微型 Sokoban 环境和确定性 suffix policy，供回放、CPU 演示及持续集成验证使用。"""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ Position = Tuple[int, int]
 
 
 class TinySokobanEnv(ReplayableEnv):
-    """One-box Sokoban with deterministic transitions and a short horizon.
+    """单箱 Sokoban，状态转移确定且回合上限较短。
 
     The default task starts with the box immediately left of the player and the target immediately
     left of the box. Pushing left solves the task; moving right consumes the short horizon.
@@ -123,7 +123,7 @@ class TinySokobanEnv(ReplayableEnv):
 
 
 class TinySokobanSuffixPolicy:
-    """Deterministic suffix runner used by tests and the local demo."""
+    """供测试和本地演示使用的确定性后缀执行器。"""
 
     def __call__(
         self,

@@ -1,4 +1,4 @@
-"""Summarize paired-suffix AgentLoop sidecars before the actor update."""
+"""汇总 AgentLoop sidecar 中的配对后缀记录，供 actor 更新前检查。"""
 
 import argparse
 import json

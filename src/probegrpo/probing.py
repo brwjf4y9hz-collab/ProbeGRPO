@@ -1,4 +1,4 @@
-"""Paired factual/counterfactual suffix evaluation."""
+"""本模块实现配对事实/反事实后缀评估接口，并明确合法动作检查、前缀重放和跳过结果的处理。"""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from .types import Anchor, ProbeResult, ReplayState, RolloutOutcome
 
 
 class SuffixPolicy(Protocol):
-    """Continue from an anchor after forcing the first action of the suffix."""
+    """固定后缀的第一个动作后，从锚点状态继续运行环境。"""
 
     def __call__(
         self,
@@ -22,7 +22,7 @@ class SuffixPolicy(Protocol):
 
 
 class CounterfactualProber:
-    """Measure a turn's signed reward effect under exact prefix replay."""
+    """在精确前缀回放条件下测量一个 turn 的有符号奖励效果。"""
 
     def __init__(
         self,

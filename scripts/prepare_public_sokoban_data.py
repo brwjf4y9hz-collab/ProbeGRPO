@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build fixed ProbeGRPO parquet splits from the public RAGEN Sokoban release."""
+"""从公开 RAGEN Sokoban 发布版本构建固定的 ProbeGRPO parquet 数据切分，并记录数据来源哈希。"""
 
 from __future__ import annotations
 

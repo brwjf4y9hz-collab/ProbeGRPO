@@ -1,4 +1,4 @@
-"""Validate response masks and replay every recorded pre-action state without a GPU."""
+"""在 CPU 上检查响应 mask，并按记录的动作前状态重放 Sokoban episode。"""
 
 import argparse
 import json

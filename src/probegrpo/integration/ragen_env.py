@@ -1,4 +1,4 @@
-"""Replay adapter for RAGEN environments without importing RAGEN at package import time."""
+"""本模块将 RAGEN 环境包装成 ProbeGRPO 的确定性回放接口，并延迟第三方依赖导入，避免普通包导入强制安装 RAGEN。"""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from ..types import ReplayState
 
 
 class RagenReplayableEnv(ReplayableEnv):
-    """Wrap a fresh RAGEN environment instance in ProbeGRPO's replay contract.
+    """将新建的 RAGEN 环境实例包装为 ProbeGRPO 回放协议。
 
     RAGEN environments are task-seeded, so ``task_id`` is metadata while ``seed`` determines the
     actual instance. ``action_encoder`` converts serialized actions back to the native environment
@@ -102,7 +102,7 @@ class RagenReplayableEnv(ReplayableEnv):
 
 
 def make_ragen_action_encoder(env: Any) -> Callable[[str], Any]:
-    """Build an encoder that accepts either RAGEN action names or numeric IDs."""
+    """构造动作编码器，同时接受 RAGEN 动作名称和数字 ID。"""
 
     lookup = getattr(env, "ACTION_LOOKUP", {})
     reverse = {str(value).lower(): key for key, value in lookup.items()}

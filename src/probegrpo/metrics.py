@@ -1,4 +1,4 @@
-"""Small, dependency-free experiment record and aggregation helpers."""
+"""本模块提供不依赖训练框架的 JSONL 记录读写、rollout 成本统计及多次运行汇总。"""
 
 from __future__ import annotations
 

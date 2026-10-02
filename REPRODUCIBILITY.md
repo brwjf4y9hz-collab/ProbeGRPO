@@ -1,11 +1,10 @@
-# Reproducibility
+# 可复现性
 
-The maintained entry point is [REPRODUCE.md](REPRODUCE.md).
+当前维护入口是[复现指南](REPRODUCE.md)。
 
-- [Repository and storage audit](REPO_AUDIT.md)
-- [Artifact catalog](repro/ARTIFACTS.md)
-- [Validation evidence](repro/validation/README.md)
-- [Result table and figure](experiments/results/public_sokoban_main_v1/README.md)
+- [仓库与存储盘点](REPO_AUDIT.md)
+- [制品目录](repro/ARTIFACTS.md)
+- [核验证据](repro/validation/README.md)
+- [结果表与图](experiments/results/public_sokoban_main_v1/README.md)
 
-Historical environment notes remain under `experiments/environment/`; they describe
-what happened at the time and do not supersede the current reproduction instructions.
+历史环境记录保存在 `experiments/environment/`；它们只描述当时情况，不取代当前复现步骤。

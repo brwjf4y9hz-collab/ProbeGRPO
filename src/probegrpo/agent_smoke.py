@@ -1,4 +1,4 @@
-"""Scripted CPU demonstration of the same episode driver used by the verl adapter."""
+"""本模块提供无需模型权重的脚本化 episode 演示。固定动作和人工构造的统计量只用于说明数据流，不代表真实模型采样或不确定性。"""
 
 import asyncio
 
@@ -8,7 +8,7 @@ from .rollout import extract_turn_records
 
 
 class ScriptedTokenIO:
-    """Character tokenization and fixed actions for CPU tests only; not an LLM rollout."""
+    """仅供 CPU 验证的字符级 tokenization 和固定动作；这不是 LLM rollout。"""
 
     def __init__(self, actions):
         self.actions = iter(actions)
@@ -59,7 +59,7 @@ async def demo():
             f"assistant_indices={turn.token_indices} replay_match=True"
         )
         print(turn.next_observation)
-    # Explicit synthetic actor statistics demonstrate the bridge, not real uncertainty.
+    # 显式传入的合成 actor 统计仅演示数据桥接方式，不代表模型真实不确定性。
     count = len(stream.response_mask)
     trace = episode.to_trace(
         entropies=[0.5] * count, top1_logprobs=[-0.1] * count, top2_logprobs=[-0.6] * count

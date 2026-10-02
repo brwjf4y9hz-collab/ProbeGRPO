@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prepare pinned source only. bootstrap_verl.sh also installs the GPU environment.
+# 这里只准备固定版本源码；bootstrap_verl.sh 还会安装 GPU 运行环境。
 set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERL_DIR="${1:-${VERL_DIR:-$PROJECT_DIR/../probegrpo-runtime/verl}}"

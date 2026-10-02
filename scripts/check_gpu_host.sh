@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 本脚本执行 check gpu host 对应的仓库流程；具体参数、环境变量和命令保持原样。
 set -euo pipefail
 
 if [[ $# -ne 1 ]]; then

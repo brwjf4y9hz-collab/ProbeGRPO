@@ -1,4 +1,4 @@
-"""Load AgentLoop probe sidecars before verl v1 writes advantages to TransferQueue."""
+"""本模块在 verl v1 训练器计算优势前读取每条 episode 的 probe sidecar，校验 trajectory、response mask、token 坐标后再打包注入。"""
 
 from __future__ import annotations
 
@@ -21,10 +21,11 @@ def pack_sidecar_probes(
     token_count: int,
     budget: int,
 ) -> tuple[PackedProbeBatch, dict[str, int]]:
-    """Match one saved episode to each padded verl row and validate token coordinates.
+    """将每条保存的 episode 匹配到一条补齐后的 verl 行，并校验 token 坐标。
 
-    The initial training gate supports one TransferQueue row per episode. Failing on a
-    missing or mismatched sidecar prevents credit from being assigned to another rollout.
+    初始训练接入限定每个 episode 对应一个 TransferQueue 行。sidecar 缺失、轨迹
+    ID 不匹配、mask 不一致或坐标落在非助手 token 上时立即报错，避免 credit
+    错分给另一条 rollout。返回的统计量区分未抽中、失败和有效 probe。
     """
 
     if budget < 0:
@@ -44,6 +45,7 @@ def pack_sidecar_probes(
             },
         )
 
+    # 移除 verl 为 span 添加的末尾编号，再检查每个 episode 是否只对应一行。
     trajectory_ids = [key.rsplit("_", 1)[0] for key in batch_keys]
     if len(set(trajectory_ids)) != len(trajectory_ids):
         raise ValueError("ProbeGRPO v1 hook does not support multi-span episodes")
@@ -59,6 +61,7 @@ def pack_sidecar_probes(
         if episode.get("trajectory_id") != trajectory_id:
             raise ValueError(f"sidecar trajectory ID mismatch: {path}")
 
+        # sidecar 可短于 padding 后的序列，但有效区必须完全相等，padding 区必须全为 0。
         recorded_mask = episode["stream"]["response_mask"]
         actual_mask = list(response_masks[sample_index])
         if (
@@ -122,7 +125,7 @@ def apply_sidecar_probe_credits(
     budget: int = 1,
     lambda_coef: float = 0.5,
 ) -> tuple[Any, dict[str, int | float]]:
-    """Add dense probe fields to a padded DataProto, then shape its advantages."""
+    """将稠密 probe 字段写入补齐后的 DataProto，再塑形其优势张量。"""
 
     if lambda_coef < 0:
         raise ValueError("probe lambda must be non-negative")
@@ -143,6 +146,7 @@ def apply_sidecar_probe_credits(
     except ImportError as error:  # pragma: no cover - GPU runtime only
         raise RuntimeError("The verl probe hook requires PyTorch") from error
 
+    # 先用 verl 的真实 batch 张量作为 token 长度和掩码来源，不依据文本重算坐标。
     advantages = data.batch["advantages"]
     response_mask = data.batch["response_mask"]
     if advantages.ndim != 2 or response_mask.shape != advantages.shape:

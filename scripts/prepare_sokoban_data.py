@@ -1,4 +1,4 @@
-"""Create tiny Sokoban fixture parquet files for integration smoke tests."""
+"""生成集成演练使用的微型 Sokoban parquet fixture。"""
 
 import argparse
 from pathlib import Path

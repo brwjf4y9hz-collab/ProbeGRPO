@@ -1,4 +1,4 @@
-"""CPU-testable episode driver. Tokenization and generation are injected by the runtime."""
+"""本模块驱动一次完整的多轮 Agent episode，并记录对齐训练 response 的 token 流、mask、动作前状态和回放前缀。环境与模型 token I/O 通过接口注入，便于 CPU 验证和真实运行时复用。"""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .rollout import RawAssistantTurn, TrajectoryTrace
 
 @dataclass(frozen=True)
 class TokenStream:
-    """Full runtime sequence plus metadata for response coordinates only."""
+    """保存完整运行时 token 序列，并提供仅针对 response 的坐标元数据。"""
 
     token_ids: Tuple[int, ...]
     response_mask: Tuple[int, ...] = ()
@@ -33,7 +33,7 @@ class TokenStream:
 
 
 def validate_merge(previous: TokenStream, updated: TokenStream, *, assistant: bool):
-    """Fail closed if a tokenizer rewrites an already recorded assistant token.
+    """若 tokenizer 改写了已记录的助手 token，则拒绝继续。
 
     Untrained trailing context may be rewritten by Continuous Token boundaries. Earlier
     trained tokens and their response coordinates must remain exactly unchanged.
@@ -101,7 +101,7 @@ class Episode:
         }
 
     def to_trace(self, *, entropies, top1_logprobs, top2_logprobs) -> TrajectoryTrace:
-        """Bridge after actor-side statistics exist. Never invent entropy from log p(a)."""
+        """在 actor 侧统计量可用后建立数据桥接；不得从 log p(a) 臆造 entropy。"""
         count = len(self.stream.response_mask)
         for values in (entropies, top1_logprobs, top2_logprobs):
             if len(values) != count or not all(math.isfinite(x) for x in values):
@@ -123,7 +123,7 @@ class Episode:
                     top2_logprobs=tuple(top2_logprobs[i] for i in t.token_indices),
                     legal_actions=t.legal_actions,
                     action_valid=t.action_valid,
-                    # The anchor is the state BEFORE the action, even if the action solves it.
+                    # anchor 始终指动作执行前的状态；即使该动作直接解题，也不能把此状态标成终止状态。
                     terminal=False,
                 )
                 for t in self.turns
@@ -143,7 +143,7 @@ async def run_episode(
     action_token_limit: int = 32,
     scripted_actions: Optional[Mapping[int, GeneratedAction]] = None,
 ) -> Episode:
-    """Run a real environment with an injected async model/tokenization interface.
+    """通过注入的异步模型/tokenizer 接口运行真实环境。
 
     ``io`` provides initial(messages), generate(stream, limit),
     assistant(stream, generated), and context(stream, previous_messages, updated_messages).
@@ -162,7 +162,7 @@ async def run_episode(
         if state.terminal:
             reason = "terminal"
             break
-        # Leave room for template boundary tokens; never silently slice recorded actions.
+        # 为模板边界 token 预留 response 空间；不能静默截断已记录的动作 token。
         room = response_budget - len(stream.response_mask) - 16
         if room <= 0:
             reason = "token_budget"
@@ -182,7 +182,7 @@ async def run_episode(
         indices = validate_merge(stream, merged, assistant=True)
         if not indices or len(merged.response_mask) > response_budget:
             raise ValueError("Assistant merge exceeded budget or produced no trained tokens")
-        # Malformed model output consumes a turn as an invalid action, not a guessed move.
+        # 格式错误的模型输出仍占用一个 turn，并作为非法动作处理；这里不猜测用户想走哪一步。
         text = generated.text.strip().lower()
         action = text if text in ACTIONS else "invalid"
         next_state = env.step(action)
@@ -215,14 +215,14 @@ async def run_episode(
         updated = messages + [{"role": "user", "content": observation_message(state)}]
         context = await io.context(stream, messages, updated)
         validate_merge(stream, context, assistant=False)
-        # Avoid ending a response with an observation that could receive the terminal reward.
+        # 避免 response 以可能被误判为终止奖励来源的 observation 收尾。
         if len(context.response_mask) + 16 >= response_budget:
             reason = "token_budget"
             break
         messages, stream = updated, context
     if not turns:
         raise ValueError(f"No assistant action generated: {reason}")
-    # Empty generation after feedback: discard trailing untrained context.
+    # 反馈后若模型没有生成任何 token，则丢弃尾部未训练上下文，避免制造空动作轮。
     last = turns[-1].token_indices[-1] + 1
     stream = TokenStream(
         stream.token_ids[: stream.prompt_length + last],

@@ -1,26 +1,21 @@
-# AutoDL GPU runbook
+# AutoDL GPU 运行手册
 
-## Fixed stack
+## 固定训练栈
 
-ProbeGRPO trains on current `verl`; it does not install RAGEN's pinned training stack. The first
-GPU milestone uses:
+ProbeGRPO 使用当前版 `verl` 训练，不安装 RAGEN 固定的训练栈。首次 GPU 里程碑采用：
 
-- `verl` commit `cf14ded3a448107e70a206fd201817cc1cbae348`;
-- the commit's frozen `uv.lock` with `vllm` and `fsdp`, then NumPy 2.3.5 override;
-- `Qwen/Qwen3.5-2B`;
-- one NVIDIA GPU with at least 45,000 MiB visible memory;
-- driver CUDA compatibility 12.8 or newer;
-- at least 80 GiB free workspace storage.
+- `verl` commit `cf14ded3a448107e70a206fd201817cc1cbae348`；
+- 该 commit 的固定 `uv.lock`，使用 `vllm` 和 `fsdp` extras，再覆盖 NumPy 2.3.5；
+- `Qwen/Qwen3.5-2B`；
+- 至少 45,000 MiB 可用显存的一张 NVIDIA GPU；
+- CUDA 驱动兼容 12.8 或更新版本；
+- 至少 80 GiB 可用的工作区存储。
 
-RAGEN remains an environment reference: its Sokoban and WebShop behavior will be adapted to verl's
-current `AgentLoop` interface after the standard GRPO stack passes. Do not install RAGEN's
-`vllm==0.8.2` dependency into this runtime.
+RAGEN 仅作为环境参考：标准 GRPO 栈通过后，再将其 Sokoban/WebShop 行为适配到当前 verl 的 `AgentLoop`。不要把 RAGEN 的 `vllm==0.8.2` 装进此运行环境。
 
-## AutoDL bring-up
+## AutoDL 环境准备
 
-Choose one 48 GB card such as an RTX A6000, A40, or L40S. Put both the repository and runtime under
-AutoDL's persistent data-disk directory rather than a small system disk. In the commands below,
-replace both paths with the actual directories shown by the instance.
+选择一张 48 GB GPU，例如 RTX A6000、A40 或 L40S。项目仓库和运行环境都放在 AutoDL 持久数据盘目录下，不要放在容量较小的系统盘。以下命令中的路径需要改成实例上实际显示的路径。
 
 ```bash
 cd /path/to/ProbeGRPO
@@ -29,29 +24,17 @@ bash scripts/bootstrap_verl.sh /path/to/persistent-workspace/probegrpo-runtime
 bash scripts/check_verl_stack.sh /path/to/persistent-workspace/probegrpo-runtime/verl
 ```
 
-The bootstrap is intentionally pinned. It records the ProbeGRPO commit, verl commit, uv version, and
-creation time in `runtime_manifest.txt`. If setup fails, keep the full command output; do not upgrade
-individual torch, Transformers, vLLM, or verl packages in place.
+Bootstrap 会固定依赖版本，并在 `runtime_manifest.txt` 记录 ProbeGRPO commit、verl commit、uv 版本和创建时间。若安装失败，保留完整命令输出；不要在原环境中单独升级 torch、Transformers、vLLM 或 verl。
 
-The lock pins NumPy 2.4.6, incompatible with mistral-common 1.11.3 on Python 3.12. Bootstrap applies
-and records `numpy==2.3.5` and runs `uv pip check`. Re-running `uv sync --frozen` restores the
-incompatible version and may remove editable ProbeGRPO; reapply the override and editable install
-after any intentional sync. The upstream lock itself is not edited.
+锁文件固定 NumPy 2.4.6，与 Python 3.12 下的 mistral-common 1.11.3 不兼容。Bootstrap 会设置并记录 `numpy==2.3.5`，随后执行 `uv pip check`。再次运行 `uv sync --frozen` 会恢复不兼容版本，也可能移除 editable ProbeGRPO；若有意同步，必须重新覆盖 NumPy 版本并安装项目。上游锁文件本身不会被修改。
 
-The bootstrap resolves the lock once and creates `verl/.venv`. Later commands use that environment's
-absolute Python path, including for Ray workers, so an accidental ambient Conda environment cannot
-silently change the training stack. The git fetch downloads only the pinned commit, and uv/Hugging
-Face caches stay under the runtime data directory instead of AutoDL's small system disk.
+Bootstrap 只解析一次锁文件并创建 `verl/.venv`。后续命令会使用该环境的绝对 Python 路径（Ray worker 也一样），避免误用当前 Conda 环境导致训练栈悄悄改变。Git 只拉取固定 commit；uv/Hugging Face 缓存保存在运行环境的数据目录中，不占 AutoDL 的小系统盘。
 
-If Hugging Face access is slow, configure a trusted mirror explicitly in the shell before running
-the scripts. Never write an access token into this repository or a command-line argument saved in
-shell history.
+若 Hugging Face 访问缓慢，可在运行脚本前于 shell 中显式设置可信镜像。不要把访问 token 写入仓库，或放进会被 shell history 保存的命令行参数。
 
-## Five-update standard GRPO gate
+## 五步标准 GRPO gate
 
-The first paid GPU run is deliberately not agentic. It checks Qwen3.5 model loading, vLLM rollout,
-FSDP2 LoRA updates, GRPO grouping (`K=4`), checkpointing, and the exact software lock before adding
-Sokoban or probes.
+首次付费 GPU 运行刻意不使用 Agent 环境，而是单独验证 Qwen3.5 模型加载、vLLM rollout、FSDP2 LoRA 更新、GRPO 分组（`K=4`）、checkpoint 及精确软件锁。
 
 ```bash
 cd /path/to/ProbeGRPO
@@ -59,18 +42,18 @@ bash scripts/run_verl_grpo_smoke.sh \
   /path/to/persistent-workspace/probegrpo-runtime/verl
 ```
 
-Defaults:
+默认设置：
 
-- two GSM8K prompts per update and four rollouts per prompt;
-- LoRA rank 32, alpha 64, `all-linear` target discovery;
-- prompt limit 256, response limit 1024;
-- actor PPO mini-batch 2 (verl multiplies it by rollout.n=4, yielding 8 trajectories);
-- dataloader workers 0; short Ray temporary path `/tmp/pgr`; OMP threads default 1;
-- optimizer and parameter offload;
-- five training updates and a checkpoint at step 5;
-- console-only logging and no W&B login.
+- 每次 update 取两个 GSM8K prompt，每个 prompt 生成四条 rollout；
+- LoRA rank 32、alpha 64，自动发现 `all-linear` target；
+- prompt 上限 256，response 上限 1024；
+- actor PPO mini-batch 为 2（verl 乘以 `rollout.n=4` 后得到 8 条轨迹）；
+- dataloader worker 数为 0；Ray 临时目录为短路径 `/tmp/pgr`；OMP 默认线程数为 1；
+- optimizer 与参数 offload；
+- 训练五步，在 step 5 保存 checkpoint；
+- 仅控制台日志，不登录 W&B。
 
-To verify resume, rerun against the same output directory:
+在相同输出目录中再次运行以验证恢复训练：
 
 ```bash
 TOTAL_TRAINING_STEPS=6 bash scripts/run_verl_grpo_smoke.sh \
@@ -80,22 +63,18 @@ TOTAL_TRAINING_STEPS=6 bash scripts/run_verl_grpo_smoke.sh \
   trainer.save_freq=1
 ```
 
-The second command must resume from step 5 and perform exactly one additional update.
+第二条命令应从 step 5 恢复，并且只再训练一个 update。
 
-## Acceptance checklist
+## 验收清单
 
-- `check_gpu_host.sh` and `check_verl_stack.sh` pass without overrides.
-- Qwen3.5 resolves as model type `qwen3_5`.
-- Five updates complete without NaN, Inf, CUDA OOM, Ray worker death, or tokenizer mismatch.
-- Each prompt produces exactly four rollout samples.
-- A step-5 checkpoint exists and resumes for step 6.
-- The log contains reward, response length, actor loss, rollout time, and update time.
-- Peak GPU memory and total wall-clock time are recorded in `experiments/environment/` before the
-  instance is stopped.
+- `check_gpu_host.sh` 和 `check_verl_stack.sh` 无额外覆盖项即可通过。
+- Qwen3.5 识别为模型类型 `qwen3_5`。
+- 五个 update 完成，无 NaN、Inf、CUDA OOM、Ray worker 退出或 tokenizer 不匹配。
+- 每个 prompt 恰好生成四个 rollout 样本。
+- 存在 step-5 checkpoint，并能恢复到 step 6。
+- 日志包含 reward、response 长度、actor loss、rollout 时间和 update 时间。
+- 停止实例前，在 `experiments/environment/` 记录显存峰值和总墙钟时间。
 
-Only after this gate passes should the project implement and run the Sokoban AgentLoop, followed by
-the deterministic replay/probe hook.
+只有通过此 gate 后，才继续接入并运行 Sokoban AgentLoop，再增加确定性重放和 probe hook。
 
-Operator-reported evidence is in `experiments/environment/2026-09-19-gpu-gate.md`. The corrected
-defaults have passed a one-update signal smoke; five steps plus resume were tested with the earlier
-256-token/mini-batch-8 configuration. Next: `docs/SOKOBAN_AGENTLOOP.md`.
+操作员报告的证据在 `experiments/environment/2026-09-19-gpu-gate.md`。修正后的默认参数已通过单步信号 smoke；五步训练及恢复训练曾使用较早的 256 token / mini-batch 8 配置测试。下一步见 `docs/SOKOBAN_AGENTLOOP.md`。

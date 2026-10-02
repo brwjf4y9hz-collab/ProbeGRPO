@@ -1,29 +1,24 @@
-# ProbeGRPO adapter model card
+# ProbeGRPO Adapter 模型卡
 
-This file becomes the release card for LoRA adapters trained by ProbeGRPO.
+此文件用于记录由 ProbeGRPO 训练出的 LoRA adapter。发布 adapter 前请补全准确资料。
 
-## Base model
+## 基础模型
 
-- Default: `Qwen/Qwen3.5-2B`
-- Stretch: `Qwen/Qwen3.5-4B`
+- 默认模型：`Qwen/Qwen3.5-2B`
+- 扩展模型：`Qwen/Qwen3.5-4B`
 
-## Training
+## 训练信息
 
-Fill in the exact base-model revision, data/environment splits, seeds, number of updates, total
-rollout tokens, hardware, resolved configuration, and ProbeGRPO commit.
+填写基础模型准确 revision、数据/环境划分、随机种子、update 数、rollout token 总量、硬件、解析后的完整配置和 ProbeGRPO commit。
 
-## Intended use
+## 预期用途
 
-Research and portfolio demonstrations in sandboxed Sokoban and WebShop environments.
+用于隔离运行的 Sokoban 和 WebShop 环境中的研究及作品集演示。
 
-## Limitations
+## 局限
 
-The model is not intended for real purchases or unsandboxed web actions. Environment reward can be
-incomplete and may encourage shortcuts. Counterfactual estimates are local, noisy, and restricted to
-enumerated legal actions.
+此模型不适用于真实购物或未隔离的网页操作。环境奖励可能不完整，并可能诱发取巧行为。反事实估计是局部且有噪声的，并且仅适用于可枚举的合法动作。
 
-## Evaluation
+## 评估要求
 
-Report every baseline using the same main-rollout and probe budget. Include all seeds and failed
-runs; do not select the best checkpoint using the test set.
-
+所有 baseline 应使用相同主 rollout 和 probe 预算。报告所有 seed 与失败运行；不要使用测试集挑选最佳 checkpoint。

@@ -1,4 +1,4 @@
-"""Select one probe anchor inside a completed agent episode."""
+"""本模块从完整 episode 构造可供调度器评分的 turn 记录，并选择至多一个锚点；特征使用 rollout 时实际可得的 chosen-token surprisal。"""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from .types import Anchor, ProbeResult, TurnRecord
 
 
 def episode_turn_records(episode: Episode) -> tuple[TurnRecord, ...]:
-    """Build scheduler records using chosen-token surprisal available during rollout."""
+    """使用 rollout 时可获得的 chosen-token surprisal 构造调度器记录。"""
 
     records = []
     invalid_before = 0

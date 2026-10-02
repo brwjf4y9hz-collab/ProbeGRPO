@@ -1,13 +1,10 @@
-# Preservation changes and comparability
+# 保存整理内容与实验可比性
 
-- Replaced broken framework setup with exact upstream/patch validation and safe repeat use.
-- Pinned model download and recorded actual runtime package observations.
-- Added archive checksums and raw-result reconstruction; retained old rounded CSV under `legacy/`.
-- Aggregate costs now use raw precision: LinearUCB extra tokens display 51.6% instead of 51.7%.
-  No rewards, trajectories, seeds, model architecture, losses or probe logic were changed.
-- New public runs save a final checkpoint by default; historical main runs saved none.
-  This changes storage and checkpoint I/O, not the training algorithm. Use `SAVE_FREQ=-1`
-  only when deliberately recreating the historical storage behavior.
-- Added future run provenance, CPU/script CI and storage/reproduction documentation.
+- 将损坏的框架安装流程替换为上游版本/patch 精确校验，并允许安全重复执行。
+- 固定模型下载版本，记录真实运行环境中的依赖版本。
+- 添加归档校验和与原始结果重建流程；旧的四舍五入 CSV 保留在 `legacy/`。
+- 汇总成本改为使用原始精度：LinearUCB 额外 token 显示为 51.6%，而不是 51.7%。奖励、轨迹、种子、模型架构、loss 和 probe 逻辑均未改变。
+- 新的公开运行默认保存最终 checkpoint；历史主实验没有保存。此变化影响存储和 checkpoint I/O，不改变训练算法。只有在刻意复刻旧存储行为时才设 `SAVE_FREQ=-1`。
+- 增加未来运行的来源记录、CPU/脚本 CI 以及存储和复现文档。
 
-Archived results were regenerated and matched. Fresh GPU retraining remains unverified.
+归档结果已重新生成并核对一致。全新 GPU 重训仍未验证。

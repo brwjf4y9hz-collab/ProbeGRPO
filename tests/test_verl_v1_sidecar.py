@@ -1,3 +1,5 @@
+"""本文件用自动化断言锁定 verl v1 sidecar 相关组件的输入约定、边界条件和预期行为；测试数据为验证样例，不代表正式实验结果。"""
+
 import hashlib
 import json
 import tempfile

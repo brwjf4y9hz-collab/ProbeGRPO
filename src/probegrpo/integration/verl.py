@@ -1,9 +1,4 @@
-"""Thin torch adapter for current verl ``DataProto`` batches.
-
-Torch is imported lazily so the framework-independent core and CPU smoke tests stay lightweight.
-The verl trainer hook should call ``apply_probe_credits_tensor`` after standard GRPO advantages are
-computed and before the actor update.
-"""
+"""本模块把框架无关的稀疏 probe credit 转换为 PyTorch 张量运算，并适配 verl DataProto 的优势字段。张量轴顺序和 mask 决定实际受影响的 token。"""
 
 from __future__ import annotations
 
@@ -18,13 +13,15 @@ def apply_probe_credits_tensor(
     lambda_coef: float = 0.5,
     epsilon: float = 1e-8,
 ) -> Any:
-    """Blend probe deltas into ``[batch, token]`` GRPO advantages.
+    """将 probe 奖励差混入 ``[batch, token]`` 的 GRPO 优势。
 
-    Expected shapes:
+    预期形状：
       - advantages: ``[batch, tokens]``
       - probe_turn_masks: ``[batch, anchors, tokens]``
       - probe_deltas: ``[batch, anchors]``
       - probe_valid: ``[batch, anchors]``
+    有效 delta 采用与无框架实现一致的零保持缩放，再沿 anchor 维求和；mask
+    决定每个 delta 写入哪些动作 token。输入形状或有限性不满足约定时立即报错。
     """
 
     try:
@@ -49,6 +46,7 @@ def apply_probe_credits_tensor(
     if lambda_coef == 0:
         return advantages
 
+    # 只对有效 probe 计算缩放上界；跳过项的占位 delta 不参与归一化。
     valid = probe_valid.bool()
     selected = probe_deltas[valid].to(dtype=advantages.dtype)
     if selected.numel() == 0:
@@ -64,6 +62,7 @@ def apply_probe_credits_tensor(
 
     normalized = torch.zeros_like(probe_deltas, dtype=advantages.dtype)
     normalized[valid] = normalized_selected
+    # 一个 token 若属于多个有效 anchor，则累加各 anchor 的局部调整量。
     adjustment = (
         normalized.unsqueeze(-1) * probe_turn_masks.to(dtype=advantages.dtype)
     ).sum(dim=1)
@@ -71,7 +70,7 @@ def apply_probe_credits_tensor(
 
 
 def apply_to_dataproto(data: Any, lambda_coef: float = 0.5) -> Any:
-    """Add probe credit to the advantage field of a verl ``DataProto`` batch."""
+    """把 probe credit 加入 verl ``DataProto`` 的优势字段并返回 batch。"""
 
     required = ("advantages", "probe_turn_masks", "probe_deltas", "probe_valid")
     missing = [name for name in required if name not in data.batch]

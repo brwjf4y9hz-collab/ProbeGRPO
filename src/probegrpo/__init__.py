@@ -1,4 +1,4 @@
-"""ProbeGRPO's framework-independent public API."""
+"""ProbeGRPO 的框架无关公共 API。"""
 
 from .advantage import (
     ProbeCredit,

@@ -1,4 +1,4 @@
-"""Reusable suffix policies for real model callbacks and deterministic testing."""
+"""本模块定义反事实后缀策略适配器，可连接 vLLM/OpenAI 兼容 callback 或确定性测试策略。"""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ TokenCounter = Callable[[str], int]
 
 
 class CallbackSuffixPolicy:
-    """Continue a replay branch using a vLLM/OpenAI-compatible callback.
+    """使用 vLLM/OpenAI 兼容 callback 继续生成一条回放分支。
 
     The callback receives `(observation, legal_actions, prior_actions, sampling_seed)` and must
     return one serialized environment action. This keeps serving concerns outside the core package.

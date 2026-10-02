@@ -1,4 +1,4 @@
-"""Decide whether one AgentLoop session should spend rollout tokens on a probe."""
+"""本模块解析 AgentLoop 是否启用 probe 的配置；优先使用训练配置，旧版调试开关仅作为回退。"""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def resolve_probe_mode(
     session_id: int,
     debug_probe: bool = False,
 ) -> ProbeMode:
-    """Resolve training config first; the legacy debug switch is fallback only."""
+    """优先读取训练配置；旧版 debug 开关仅作为后备选项。"""
 
     if session_id < 0:
         raise ValueError("session_id must be non-negative")

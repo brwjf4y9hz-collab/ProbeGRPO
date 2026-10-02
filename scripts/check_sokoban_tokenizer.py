@@ -1,8 +1,4 @@
-"""Exercise the real verl/Qwen tokenizer with scripted actions, without loading weights.
-
-Run with verl/.venv/bin/python after installing ProbeGRPO in that environment.
-This is an integration check, not model-generated success evidence.
-"""
+"""用脚本动作检查真实 verl/Qwen tokenizer 与数据转换路径；不加载模型权重。"""
 
 import asyncio
 import json
@@ -75,7 +71,7 @@ async def main():
         for turn in turns:
             state = SokobanEnv().replay("push-up", 17, turn["action_prefix"])
             assert state.state_hash == turn["state_hash"]
-        # Validate the actual verl conversion path as well as the Pydantic schema.
+        # 同时验证 verl 实际转换路径和 Pydantic schema，避免只通过结构层校验。
         data = output.as_dict()
         assert float(data["rm_scores"].sum()) == 1.0
         print(

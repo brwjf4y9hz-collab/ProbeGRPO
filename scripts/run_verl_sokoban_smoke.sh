@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 本脚本执行 run verl sokoban smoke 对应的仓库流程；具体参数、环境变量和命令保持原样。
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
@@ -11,7 +12,7 @@ shift
 export DATA_DIR="${DATA_DIR:-$VERL_DIR/data/probegrpo-sokoban-fixtures}"
 export OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/outputs/verl-sokoban-smoke}"
 export TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-1}"
-# Ray may otherwise assign zero OMP threads to a fractional-CPU vLLM actor.
+# 否则 Ray 可能为仅分配部分 CPU 的 vLLM actor 设置 0 个 OMP 线程。
 export OMP_NUM_THREADS=1
 OMP_OVERRIDE='+ray_kwargs.ray_init.runtime_env.env_vars.OMP_NUM_THREADS="1"'
 

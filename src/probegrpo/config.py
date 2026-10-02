@@ -1,4 +1,4 @@
-"""Validated configuration for ProbeGRPO-specific behavior."""
+"""本模块定义 ProbeGRPO 专属配置项，并在创建配置对象时检查不合法的预算和系数。"""
 
 from __future__ import annotations
 

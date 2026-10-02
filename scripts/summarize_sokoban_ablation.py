@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize public-Sokoban runs from logs and episode sidecars."""
+"""从日志和 episode sidecar 汇总公开 Sokoban 消融实验指标。"""
 
 from __future__ import annotations
 

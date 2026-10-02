@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the committed three-seed Sokoban result as a dependency-free SVG."""
+"""不依赖绘图库，将提交的三随机种子 Sokoban 结果渲染为 SVG。"""
 
 from __future__ import annotations
 

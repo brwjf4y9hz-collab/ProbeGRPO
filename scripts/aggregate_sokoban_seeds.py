@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate matched public-Sokoban runs across random seeds."""
+"""汇总不同随机种子的公开 Sokoban 运行，校验实验行并计算跨种子统计量。"""
 
 from __future__ import annotations
 

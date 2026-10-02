@@ -1,9 +1,4 @@
-"""Replay an agent episode into paired, model-generated suffixes.
-
-The recorded prefix and anchor action are injected without another model call. Both
-branches then use fresh generation with the same sampling seed. This module has no
-torch or verl dependency; the runtime supplies token I/O and an environment factory.
-"""
+"""本模块对已完成 episode 做成对反事实 probe：重放到动作前锚点，分别执行事实和替代动作，并用独立模型会话生成后缀。状态或上下文校验失败时返回无效结果。"""
 
 from __future__ import annotations
 
@@ -26,11 +21,11 @@ async def probe_episode(
     response_budget: int,
     timeout_seconds: Optional[float] = None,
 ) -> ProbeResult:
-    """Replace one legal action, then resample both suffixes from equal contexts.
+    """替换一个合法动作，并从相同上下文重新采样两条后缀。
 
-    ``io_factory(seed, branch_name)`` must create independent model sessions. The
-    seed is identical in the factual and counterfactual calls. Invalid probes
-    return zero credit and a reason instead of changing a training advantage.
+    ``io_factory(seed, branch_name)`` 必须创建互相独立的模型会话；事实分支和
+    反事实分支使用相同种子。只有前缀回放、锚点状态和上下文校验都通过，才会
+    返回有效奖励差；无效 probe 返回零 credit 和原因，不改变训练优势。
     """
 
     if not 0 <= anchor_turn_id < len(episode.turns):
@@ -41,6 +36,7 @@ async def probe_episode(
     alternative_action = alternative.text.strip().lower()
 
     def skipped(reason: str) -> ProbeResult:
+        # 失败记录保留锚点与动作信息，便于统计失败原因；奖励差严格置零。
         return ProbeResult(
             anchor_id=anchor_id,
             factual_action=factual_action,
@@ -64,6 +60,7 @@ async def probe_episode(
     if timeout_seconds is not None and timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
 
+    # 两个全新环境分别回放同一动作前缀，避免一个分支的状态污染另一个分支。
     try:
         factual_env, counterfactual_env = env_factory(), env_factory()
         factual_state = factual_env.replay(
@@ -85,6 +82,7 @@ async def probe_episode(
     ):
         return skipped("anchor_state_mismatch")
 
+    # 前缀 token 直接重放，只有锚点后的 token 由模型重新生成。
     scripted_prefix = {}
     for index, recorded in enumerate(episode.turns[:anchor_turn_id]):
         if not recorded.generated_token_ids:
@@ -116,6 +114,7 @@ async def probe_episode(
             return await asyncio.wait_for(result, timeout=timeout_seconds)
         return await result
 
+    # 同种子只控制采样可比性；独立会话仍需由工厂保证，避免共享缓存状态。
     factual = GeneratedAction(
         turn.generated_token_ids, turn.raw_text, turn.generated_logprobs
     )
@@ -133,6 +132,7 @@ async def probe_episode(
 
     factual_tokens = _suffix_tokens(factual_episode, anchor_turn_id)
     counterfactual_tokens = _suffix_tokens(counterfactual_episode, anchor_turn_id)
+    # 定义 delta = R_factual - R_counterfactual；正值表示事实动作更好。
     return ProbeResult(
         anchor_id=anchor_id,
         factual_action=factual_action,

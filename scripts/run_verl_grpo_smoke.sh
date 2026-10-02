@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 本脚本执行 run verl grpo smoke 对应的仓库流程；具体参数、环境变量和命令保持原样。
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
@@ -21,11 +22,11 @@ DATA_DIR="${DATA_DIR:-$VERL_DIR/data/probegrpo-gsm8k}"
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/outputs/verl-grpo-smoke}"
 TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-5}"
 
-# Set these before the compatibility check (which also loads the model config).
+# 在兼容性检查前设置这些变量；该检查也会读取模型配置。
 export HF_HOME="${HF_HOME:-$VERL_DIR/data/huggingface}"
 export HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
-# Ray appends session/socket names; a project-local path exceeds AF_UNIX's limit.
+# Ray 会在路径后追加会话和 socket 名称；项目目录路径过长会超过 AF_UNIX 限制。
 export RAY_TMPDIR="${RAY_TMPDIR:-/tmp/pgr}"
 
 bash "$PROJECT_DIR/scripts/check_verl_stack.sh" "$VERL_DIR"

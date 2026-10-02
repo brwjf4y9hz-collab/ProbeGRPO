@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print a compact Markdown table from ProbeGRPO experiment JSONL records."""
+"""从 ProbeGRPO JSONL 实验记录生成简洁的 Markdown 汇总表。"""
 
 from __future__ import annotations
 

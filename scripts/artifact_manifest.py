@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create and verify a byte-exact artifact inventory, including tar archives."""
+"""生成并验证文件及 tar 归档的逐项 SHA-256 清单，用于检查备份是否完整。"""
 import argparse
 import hashlib
 import json

@@ -1,4 +1,4 @@
-"""Stable data contracts shared by rollouts, schedulers, and trainers."""
+"""本模块集中定义 replay、rollout、turn、anchor 和 probe 的不可变数据结构，约定各组件之间共享的字段含义。"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any, Mapping, Optional, Sequence, Tuple
 
 @dataclass(frozen=True)
 class ReplayState:
-    """Environment state reached after resetting or replaying an action prefix."""
+    """环境 reset 后或重放一段动作前缀后到达的状态。"""
 
     observation: str
     state_hash: str
@@ -20,7 +20,7 @@ class ReplayState:
 
 @dataclass(frozen=True)
 class RolloutOutcome:
-    """Result of continuing an environment from a replayed anchor."""
+    """从已重放到的锚点继续执行环境后得到的结果。"""
 
     reward: float
     token_count: int
@@ -31,7 +31,7 @@ class RolloutOutcome:
 
 @dataclass(frozen=True)
 class TurnRecord:
-    """One assistant turn and the information required to replay and score it.
+    """一个助手轮次，以及重放和评分所需的信息。
 
     ``action_prefix`` contains environment actions strictly before this turn. ``token_indices``
     identifies the assistant tokens that should receive local probe credit.
@@ -70,7 +70,7 @@ class TurnRecord:
 
 @dataclass(frozen=True)
 class Anchor:
-    """A turn selected by a scheduler for counterfactual probing."""
+    """调度器选中用于反事实探测的一个轮次。"""
 
     turn: TurnRecord
     scheduler: str
@@ -79,7 +79,7 @@ class Anchor:
 
 @dataclass(frozen=True)
 class ProbeResult:
-    """Measured effect of replacing one action at a fixed replayed state."""
+    """在固定重放状态下替换一个动作所测得的效果。"""
 
     anchor_id: str
     factual_action: str
@@ -105,7 +105,6 @@ class ProbeResult:
 
 
 def as_tuple(values: Sequence[str]) -> Tuple[str, ...]:
-    """Convert framework-owned action collections into an immutable public shape."""
+    """将框架管理的动作集合转换为不可变的公共数据形态。"""
 
     return tuple(str(value) for value in values)
-

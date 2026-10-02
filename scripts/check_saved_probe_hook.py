@@ -1,4 +1,4 @@
-"""Replay saved sidecars through the torch advantage adapter without loading a model."""
+"""读取保存的 sidecar，通过 torch 优势适配器重放 credit 注入流程；不加载模型权重。"""
 
 import argparse
 import json

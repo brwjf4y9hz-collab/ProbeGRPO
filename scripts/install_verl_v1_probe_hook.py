@@ -1,9 +1,4 @@
-"""Install the ProbeGRPO advantage call in the pinned verl v1 trainer.
-
-The project keeps the external verl checkout separate. This small, idempotent patch
-adds the call immediately after standard GRPO advantage calculation and before the
-trainer writes nested advantages to TransferQueue.
-"""
+"""将 ProbeGRPO 优势注入调用安装到固定版本的 verl v1 trainer，并对目标源码做匹配检查。"""
 
 from __future__ import annotations
 

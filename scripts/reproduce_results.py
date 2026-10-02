@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recompute the published result from archived raw logs and episode records (CPU)."""
+"""从归档原始日志和 episode 记录在 CPU 上重新计算已发布结果。"""
 import argparse
 import hashlib
 import json
@@ -68,7 +68,7 @@ def main():
                     errors.append(f'{seed}/{method}: {field} differs')
             for field in FLOAT_FIELDS:
                 a, b = row[field], expected[field]
-                # Compare against the full-precision audit export.
+                # 与保留完整精度的审计导出文件逐项比较。
                 tolerance = 0.0 if field == 'final_val_success' else 1e-12
                 if (a is None) != (b is None) or (a is not None and not
                     math.isclose(float(a), float(b), rel_tol=0, abs_tol=tolerance)):

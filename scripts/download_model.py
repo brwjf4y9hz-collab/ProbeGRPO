@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download the immutable base model snapshot and verify every recorded file."""
+"""下载固定版本的基础模型快照，并逐个校验清单中记录的文件哈希。"""
 import argparse
 import hashlib
 import json

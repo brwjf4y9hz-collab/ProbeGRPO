@@ -1,4 +1,4 @@
-"""Adapters for the immutable public RAGEN Sokoban train/test release."""
+"""本模块解析固定版本的公开 RAGEN Sokoban 棋盘，将任务编码成可回放 ID，并验证棋盘合法性及最短解长度。"""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ _BOARD_RE = re.compile(
 
 
 def parse_ragen_board(prompt: str) -> tuple[str, ...]:
-    """Extract and translate RAGEN's tabular 6x6 board from a released prompt."""
+    """从发布版 prompt 中提取并转换 RAGEN 的表格化 6×6 棋盘。"""
 
     match = _BOARD_RE.search(prompt)
     if match is None:
@@ -44,7 +44,7 @@ def parse_ragen_board(prompt: str) -> tuple[str, ...]:
 
 
 def encode_public_task(board: tuple[str, ...]) -> str:
-    """Embed a released board in the task ID so replay needs no mutable registry."""
+    """把发布版棋盘编码进 task ID，使回放不依赖可变注册表。"""
 
     board = validate_public_board(board)
     payload = "\n".join(board).encode("utf-8")
@@ -82,7 +82,7 @@ def validate_public_board(board: tuple[str, ...]) -> tuple[str, ...]:
 
 
 def shortest_solution_length(board: tuple[str, ...]) -> int | None:
-    """Return the exact minimum move count for the supported one-box public boards."""
+    """返回当前支持的公开单箱棋盘的精确最少步数。"""
 
     board = validate_public_board(board)
     floor = {
