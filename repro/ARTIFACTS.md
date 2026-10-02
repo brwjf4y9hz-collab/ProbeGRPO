@@ -2,8 +2,8 @@
 
 ## Public versioned evidence
 
-Release tag: `repro-2026-10-02` in the
-[GitHub Releases area](https://github.com/brwjf4y9hz-collab/ProbeGRPO/releases).
+Release tag: `repro-2026-10-02-v1` in the
+[verified release](https://github.com/brwjf4y9hz-collab/ProbeGRPO/releases/tag/repro-2026-10-02-v1).
 The release is the distribution point for the following separately checksummed assets.
 See `release-assets.json` for exact sizes and SHA-256, and verify `SHA256SUMS` before use.
 
@@ -22,7 +22,7 @@ preinstalled environment. Retain upstream licenses when redistributing framework
 
 - Original AutoDL project and outputs remain in their original persistent directory.
 - Local `ProbeGRPO-archive-20261002/` contains evidence, provenance and data archives,
-  the full-output inventory, and the full checkpoint backup when verification completes.
+  the full-output inventory, and the complete checkpoint backup, verified against all 20,412 manifest entries.
   Its `BACKUP_STATUS.json` is the authority for completion; `.part` means incomplete.
 - `provenance.tar.gz` preserves the original project Git bundle, unmodified upstream
   framework archive, full local framework diff and actual training package observations.
