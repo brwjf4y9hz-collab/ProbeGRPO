@@ -10,6 +10,10 @@ ProbeGRPO 是一个面向 Agent-RL 实习作品集的项目，展示从多轮环
 
 已重新核对 12 次历史运行中的 1,536 条最终评估记录。主实验当时没有保存最终模型权重；现存的大型 checkpoint 属于早期 GSM8K smoke run。整理期间尚未重新进行 GPU 训练。
 
+## 问题复盘与处理记录
+
+[问题包与索引](docs/incidents/README.md) · [完整复盘](docs/incidents/RETROSPECTIVE.md) · [下载 ZIP](docs/incidents/problem-package.zip)。整理 8 项故障、设计约束及负结果，逐项关联现象、定位依据、处理过程、历史验收和剩余限制；没有新增实验。
+
 ## 已实现内容
 
 - 与框架无关的 `ReplayableEnv` 接口，支持确定性前缀重放和状态哈希。

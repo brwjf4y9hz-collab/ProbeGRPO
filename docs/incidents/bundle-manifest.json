@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "project": "ProbeGRPO",
+  "assembled": "2026-10-13",
+  "source_base_commit": "8c9bd0cec6412108b70a813a4123f0a92ebd4825",
+  "incident_count": 8,
+  "scope": "Curated existing reports, implementation entry points, and documentation. No model calls, training, grading, or hidden-data export.",
+  "files": [
+    {
+      "path": "docs/incidents/EVIDENCE.md",
+      "sha256": "025f17bee55af4a276aed6bf94e5412dae2223273f24f7e06a0ed2ec2ef73887"
+    },
+    {
+      "path": "docs/incidents/INTERVIEW.md",
+      "sha256": "cd62c04331025670ccd629a7ef545f7a07a65f046e94501a09967779eb38651f"
+    },
+    {
+      "path": "docs/incidents/README.md",
+      "sha256": "102d5c3bd5710dc92d5bea9225d8e36cee15865db1a24b90b2ac6f69fe4bc858"
+    },
+    {
+      "path": "docs/incidents/RETROSPECTIVE.md",
+      "sha256": "9f231d13ccc060b3a2d114a6f0bce3fe108e4217a71351e43425aaa6ab69f95d"
+    },
+    {
+      "path": "docs/incidents/incidents.json",
+      "sha256": "319b98a1d30006bb171a501d0adc94a8b231f011c30d22407f85fe46d3086639"
+    },
+    {
+      "path": "docs/incidents/verify_bundle.py",
+      "sha256": "6fa0b38943f239eacad819d54ca7b4d901af0d9cde975c49630f8e65195c568f"
+    },
+    {
+      "path": "docs/results/README.md",
+      "sha256": "56fc4a67c4b04a9d254ce4ab34e3716161ad643d2b974c544135423242e14787"
+    },
+    {
+      "path": "docs/results/figure-provenance.json",
+      "sha256": "de437149dcf03af23a79ec290aa6061cc169c54c1d1c92d8eb18836e1b712cc2"
+    },
+    {
+      "path": "docs/results/figures/01_probegrpo.png",
+      "sha256": "fe03969fa7f04f45fb983356b426e41210163e82d832521be7c9ad77f7d59d4f"
+    },
+    {
+      "path": "docs/results/figures/01_probegrpo.svg",
+      "sha256": "654076713963c4cb19612062170fc12971435cf5cc61107a34d44138a65f477c"
+    },
+    {
+      "path": "docs/results/plot_results.py",
+      "sha256": "581e597a679ffd9659088c1d6a7623ea87043ff851a07e394fb6bbf0380a366b"
+    },
+    {
+      "path": "docs/results/requirements-viz.txt",
+      "sha256": "b948456519975d7b78938a07ffdefa26ac78f892616e9102226ad4cd0e8fc34e"
+    },
+    {
+      "path": "experiments/environment/2026-09-19-gpu-gate.md",
+      "sha256": "0666d5fcbd606850a02884bbf35857fa916f3de148b7d9335f697401e8afb82a"
+    },
+    {
+      "path": "experiments/environment/2026-09-20-probe-gate.md",
+      "sha256": "019aa9064abb1a8a98fc865d88d1975fce64e804a7a2a3254bf60a1f09e592e2"
+    },
+    {
+      "path": "experiments/environment/2026-09-21-public-ablation-incidents.md",
+      "sha256": "09db16205ca18896f18faf1a4254dcc8a329e70d4e9f8488ceed2c686477f0a3"
+    },
+    {
+      "path": "experiments/results/public_sokoban_main_v1/README.md",
+      "sha256": "21ad1d6b8c5cf80263da0912a07de4add621f9b97b4d2bd3de103334da7e8898"
+    },
+    {
+      "path": "experiments/results/public_sokoban_main_v1/aggregate.json",
+      "sha256": "81162de5476434273ea31dbf1220e2998292aac80aab48cdcb838da7860a63f8"
+    },
+    {
+      "path": "repro/ARTIFACTS.md",
+      "sha256": "30cfdca2626f1f28ea43530f5f0e7ff49990b9364b5cac2cac9027672ca6a207"
+    },
+    {
+      "path": "repro/validation/README.md",
+      "sha256": "ab8bf294cb9381b8b3d4e98b175d7947d90de0a338d392538e37949b15695b16"
+    },
+    {
+      "path": "scripts/artifact_manifest.py",
+      "sha256": "ac26fb95568cdd157c466a70c0e1eebff480f789bdb426bf95349b5d58a026bd"
+    },
+    {
+      "path": "scripts/bootstrap_verl.sh",
+      "sha256": "30cd5481c2787024013276eb8066709156b69da70c2ad2c5aa9d61d1203b276d"
+    },
+    {
+      "path": "scripts/prepare_public_sokoban_data.py",
+      "sha256": "81b1e7b11bb42d96ebfbeb09eb4aac3e354dde47ce5969d1057bc8c0e704da54"
+    },
+    {
+      "path": "scripts/reproduce_results.py",
+      "sha256": "fc1f035eb6acf69dd0b8f237276e60b62999b836d2af94a24bd4de47dfb4acac"
+    },
+    {
+      "path": "scripts/run_public_sokoban_train.sh",
+      "sha256": "0fbe626c412dab8ae0fa322e1123632865db7511eba02e67e9d86c0c69c6ac94"
+    },
+    {
+      "path": "scripts/run_verl_grpo_smoke.sh",
+      "sha256": "b5bf90100bfe8bc12f24c2318d51a74d5d270a431b43eea306b9ace9547df541"
+    },
+    {
+      "path": "scripts/run_verl_sokoban_smoke.sh",
+      "sha256": "26ca303b2144b7785086685ca8218ba6e4130a50d08a6b71f9eeb30fe481d67a"
+    },
+    {
+      "path": "scripts/summarize_sokoban_ablation.py",
+      "sha256": "b63b0ea3978ceb4ef56b56074bbdb800bc35a36c1fd2f3ba7c0ba8030259f918"
+    },
+    {
+      "path": "src/probegrpo/advantage.py",
+      "sha256": "b0904d8b9ee38ba3d6b14d7a00e45a945e97ae4205e9fe130b99c5a17db484b5"
+    },
+    {
+      "path": "tests/test_ablation_summary.py",
+      "sha256": "45f26174367cc5bd66d17a1f6b3ce2af6ab78e73fa73566e7f674d00ad51550c"
+    },
+    {
+      "path": "tests/test_pipeline.py",
+      "sha256": "7b8dca28dc42ed848306712e383a7784debcbe85a54914d22ba1c6a3715b5220"
+    },
+    {
+      "path": "tests/test_public_sokoban.py",
+      "sha256": "13af9e931b8715370289b797374a13ce4c2f6697034ecc82c1f47d3ac27b25c1"
+    },
+    {
+      "path": "tests/test_verl_v1_sidecar.py",
+      "sha256": "00fbc290d79f529ba8fee494b2cd71052e50f063250f3f681f46804cff296350"
+    }
+  ]
+}
