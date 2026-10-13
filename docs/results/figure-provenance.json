@@ -1,0 +1,40 @@
+{
+  "checked": "2026-10-13",
+  "source_repo": "https://github.com/brwjf4y9hz-collab/ProbeGRPO",
+  "source_files": {
+    "aggregate": {
+      "path": "experiments/results/public_sokoban_main_v1/aggregate.json",
+      "sha256": "81162de5476434273ea31dbf1220e2998292aac80aab48cdcb838da7860a63f8"
+    },
+    "per_seed": {
+      "path": "experiments/results/public_sokoban_main_v1/per_seed.csv",
+      "sha256": "30f6d1111dc564c2f8aa512a0e5c6463b7572d7f16bdc88149e932bf2ed26694"
+    }
+  },
+  "figures": {
+    "01_probegrpo.png": "fe03969fa7f04f45fb983356b426e41210163e82d832521be7c9ad77f7d59d4f",
+    "01_probegrpo.svg": "654076713963c4cb19612062170fc12971435cf5cc61107a34d44138a65f477c"
+  },
+  "derived_tables": {},
+  "dependencies": {
+    "matplotlib": "3.11.2",
+    "numpy": "2.4.6",
+    "pillow": "12.3.0"
+  },
+  "font": "Arial Unicode MS",
+  "model_requests": 0,
+  "gpu_training_runs": 0,
+  "new_official_grading_runs": 0,
+  "checks": [
+    "Aggregate results retained",
+    "Fixed denominators retained",
+    "Unknown and negative results retained",
+    "Rendered PNG visual inspection passed"
+  ],
+  "visual_qa": {
+    "checked": "2026-10-13",
+    "status": "passed",
+    "scope": "PNG visual inspection; SVG XML and image integrity; not a new raw-run audit"
+  },
+  "plotter_sha256": "581e597a679ffd9659088c1d6a7623ea87043ff851a07e394fb6bbf0380a366b"
+}

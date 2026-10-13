@@ -36,9 +36,13 @@ ProbeGRPO 是一个面向 Agent-RL 实习作品集的项目，展示从多轮环
 | Surprisal-B2 | 31.2% ± 3.4% | +7.3 ± 4.3 个百分点 | 57.3% |
 | **LinearUCB-B2** | **31.0% ± 1.2%** | **+7.0 ± 0.8 个百分点** | **51.6%** |
 
-![公开 Sokoban 三种子实验结果](docs/assets/public_sokoban_main_v1.svg)
+[结果图与详细分析](docs/results/README.md)：种子原始点、样本标准差、配对差值、token 成本与 anchor 诊断；附数据来源和离线绘图入口。
 
-LinearUCB 在三个种子中都高于对应 GRPO，且 probe 方法中的跨种子波动最低。Surprisal 的均值高 0.2 个百分点，但相对 seed 间波动很小，成本也更高，不能视为有意义的胜出。每 1,000 个 probe token 找到的高影响 anchor 数量上，Random 更高。因此，这些结果支持“turn-local counterfactual credit 有正向信号”和“本次 LinearUCB 结果较稳定”，**不支持**“LinearUCB 是最高效的 anchor 选点器”。完整结果、协议偏差和证据边界见[结果记录](experiments/results/public_sokoban_main_v1/README.md)。
+![ProbeGRPO 成功率、种子波动与成本](docs/results/figures/01_probegrpo.png)
+
+误差线是跨种子样本标准差，不是置信区间。seed17 GRPO 有历史 padding 配置差异；本实验不是等总 token 对照，LinearUCB 的 1.516× rollout token 略高于原 1.5× 目标。完整限制见[分析](docs/results/README.md)。原[简版 SVG](docs/assets/public_sokoban_main_v1.svg)保留。
+
+LinearUCB 在三次历史运行中都高于对应 GRPO，且本次 probe 方法中的跨种子波动最低；这是描述性观察，三种子不足以证明显著或普遍稳定。Surprisal 成功率均值更高且 token 开销更多，Random 的高影响 anchor/千额外 token 诊断更高；这些结果未证明 LinearUCB 是最优选点器，也未验证等总 token 下的收益。完整协议偏差和证据边界见[结果记录](experiments/results/public_sokoban_main_v1/README.md)。
 
 ## 系统流程
 
