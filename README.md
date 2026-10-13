@@ -1,167 +1,86 @@
 # ProbeGRPO
 
-ProbeGRPO 是一个面向 Agent-RL 实习作品集的项目，展示从多轮环境交互到细粒度策略更新的完整流程。项目在 GRPO 上增加了**带预算的反事实 turn 探测**：重放选中的决策状态，尝试另一个合法动作，测量环境奖励变化，再将所得局部信号用于对应的 assistant turn。
+**多轮 Agent 的预算约束反事实探测与局部信用分配。**
 
-项目目标是提供一个可信、可检查的工程实现，不声称反事实 credit assignment 本身是新方法。项目特色是可复用的小型核心、确定性重放校验、预算感知的选点策略、当前版本 verl 接入、源自 RAGEN 的任务适配器，以及明确的成本记录。
+ProbeGRPO 在 GRPO 训练链路中重放选中的决策状态，对比原动作与替代动作的后续奖励，将局部奖励差用于对应 assistant turn 的策略更新。项目包含确定性环境回放、探测调度、token mask、verl 接入，以及公开 Sokoban 的多种子训练与成本分析。
 
-## 保存与复现入口（2026-10-02）
+| 阅读目的 | 入口 |
+|---|---|
+| 快速了解问题与方法 | [项目导览](docs/PROJECT_WALKTHROUGH.md) |
+| 查看结果图与逐种子数据 | [结果分析](docs/results/README.md) |
+| 查看回放、选点与训练接入 | [系统架构](docs/ARCHITECTURE.md) |
+| 运行演示或准备 GPU 实验 | [快速开始](#快速开始) · [完整复现说明](REPRODUCE.md) |
 
-代码、配置和小型结果保存在 Git；框架使用固定 commit 和最小 patch；模型、数据及原始输出保存在独立归档，并记录 SHA-256。入口见[保存清单](repro/ARTIFACTS.md)、[干净环境复现说明](REPRODUCE.md)、[仓库盘点](REPO_AUDIT.md)和[核验记录](repro/validation/README.md)。
+## 实验结果
 
-已重新核对 12 次历史运行中的 1,536 条最终评估记录。主实验当时没有保存最终模型权重；现存的大型 checkpoint 属于早期 GSM8K smoke run。整理期间尚未重新进行 GPU 训练。
+模型为 `Qwen/Qwen3.5-2B`；512 个训练关卡、128 个共同留出关卡。四种方法各运行三个种子（17、42、101）、每次 50 次训练更新。下表为跨种子均值 ± 样本标准差；百分点简称 pp。
 
-## 问题复盘与处理记录
-
-[问题包与索引](docs/incidents/README.md) · [完整复盘](docs/incidents/RETROSPECTIVE.md) · [下载 ZIP](docs/incidents/problem-package.zip)。整理 8 项故障、设计约束及负结果，逐项关联现象、定位依据、处理过程、历史验收和剩余限制；没有新增实验。
-
-## 已实现内容
-
-- 与框架无关的 `ReplayableEnv` 接口，支持确定性前缀重放和状态哈希。
-- 结构化的 `TurnRecord`、`Anchor`、`ProbeResult` 和实验指标类型。
-- 随机、chosen-token surprisal 和在线 LinearUCB anchor 选点器。
-- 带严格重放校验的 factual/counterfactual 成对后缀探测。
-- 支持 Probe credit 的 GRPO advantage shaping，并精确标记 assistant turn token。
-- 延迟导入 torch/verl 的适配器，核心包不依赖训练框架。
-- 确定性 Sokoban 环境、公开 RAGEN 数据适配器和一条命令即可运行的 CPU smoke test。
-- 固定版本的当前 verl 初始化脚本，以及面向单张 48 GB GPU、使用 `Qwen/Qwen3.5-2B` 的五步 GRPO gate。
-
-维护者已运行五个标准 GRPO update、从 step 5 恢复到 step 6，并核验一个修正后的单步运行：8 条轨迹且梯度非零。不同配置、故障及证据边界见 [GPU gate 记录](experiments/environment/2026-09-19-gpu-gate.md)。这不是 ProbeGRPO 性能结果。
-
-当前 verl Sokoban AgentLoop 已完成真实 Qwen rollout 和带/不带 probe credit 的 actor update。三个手工关卡仅用于 smoke test。正式实验使用固定版本的公开 RAGEN 数据，去重棋盘布局、排除训练/测试重叠，并为每个选中棋盘记录精确最短路径 oracle。操作步骤见 [AgentLoop 运行手册](docs/SOKOBAN_AGENTLOOP.md)。
-
-## 主要结果
-
-公开 Sokoban 对比实验中，每种方法使用 `Qwen/Qwen3.5-2B` 训练 50 个 update，运行三个随机种子。下表是在相同 128 个 held-out 棋盘上的 seed 平均值 ± seed 间样本标准差，种子为 17、42、101。
-
-| 方法 | 最终成功率 | 相对 GRPO 的配对提升 | 额外 rollout token |
+| 方法 | 留出成功率 | 相对 GRPO 的配对差值 | 额外 rollout token |
 |---|---:|---:|---:|
-| GRPO | 24.0% ± 2.0% | - | 0.0% |
-| Random-B2 | 29.2% ± 4.6% | +5.2 ± 6.5 个百分点 | 51.2% |
-| Surprisal-B2 | 31.2% ± 3.4% | +7.3 ± 4.3 个百分点 | 57.3% |
-| **LinearUCB-B2** | **31.0% ± 1.2%** | **+7.0 ± 0.8 个百分点** | **51.6%** |
+| GRPO | 24.0% ± 2.0 pp | — | 0.0% |
+| Random-B2 | 29.2% ± 4.6 pp | +5.2 ± 6.5 pp | 51.2% |
+| Surprisal-B2 | 31.2% ± 3.4 pp | +7.3 ± 4.3 pp | 57.3% |
+| LinearUCB-B2 | 31.0% ± 1.2 pp | +7.0 ± 0.8 pp | 51.6% |
 
-[结果图与详细分析](docs/results/README.md)：种子原始点、样本标准差、配对差值、token 成本与 anchor 诊断；附数据来源和离线绘图入口。
+![ProbeGRPO 成功率、种子波动与探测成本](docs/results/figures/01_probegrpo.png)
 
-![ProbeGRPO 成功率、种子波动与成本](docs/results/figures/01_probegrpo.png)
+三次历史运行中，LinearUCB-B2 均高于对应 GRPO；Surprisal 的成功率均值更高，Random 的每千额外 token 高影响 anchor 诊断更高。结果尚未证明某个调度器全面最优。
 
-误差线是跨种子样本标准差，不是置信区间。seed17 GRPO 有历史 padding 配置差异；本实验不是等总 token 对照，LinearUCB 的 1.516× rollout token 略高于原 1.5× 目标。完整限制见[分析](docs/results/README.md)。原[简版 SVG](docs/assets/public_sokoban_main_v1.svg)保留。
+**结果范围：**seed17 GRPO 存在历史 padding 配置差异；比较没有匹配总 token 预算。额外 token 比例以各方法自身的主 rollout token 为分母。误差线是样本标准差，不是置信区间；12 次运行评估的是同一批 128 个关卡。主实验最终权重未保存，轨迹与评估记录已有归档。
 
-LinearUCB 在三次历史运行中都高于对应 GRPO，且本次 probe 方法中的跨种子波动最低；这是描述性观察，三种子不足以证明显著或普遍稳定。Surprisal 成功率均值更高且 token 开销更多，Random 的高影响 anchor/千额外 token 诊断更高；这些结果未证明 LinearUCB 是最优选点器，也未验证等总 token 下的收益。完整协议偏差和证据边界见[结果记录](experiments/results/public_sokoban_main_v1/README.md)。
+[完整分析](docs/results/README.md) · [实验协议](experiments/results/public_sokoban_main_v1/README.md) · [归档核验](repro/validation/README.md)
 
-## 系统流程
+## 方法与训练链路
 
-```text
-主 rollout：每题 K=4 条轨迹
-       |
-       v
-提取 TurnRecord -----> anchor 选点器
-                            | 预算 B=2
-                            v
-                       确定性重放
-                         /      \
-                factual 后缀    counterfactual 后缀
-                         \      /
-                       奖励差 delta
-                            |
-                            v
-       trajectory GRPO advantage + turn-local probe credit
-                            |
-                            v
-                        策略更新
+```mermaid
+flowchart TD
+    A[多轮 rollout 与轨迹记录] --> B[预算约束 anchor 选点]
+    B --> C[重放共同前缀并核验状态]
+    C --> D[事实与反事实后续采样]
+    D --> E[计算局部奖励差]
+    E --> F[对齐 assistant turn token mask]
+    F --> G[修正 GRPO advantage]
+    G --> H[verl actor 更新与留出评估]
 ```
 
-数据契约和接入边界见 [系统架构](docs/ARCHITECTURE.md)。
+- **回放与探测：**`ReplayableEnv`、状态哈希和成对后续采样；回放不一致时跳过探测。
+- **调度：**Random、chosen-token Surprisal、LinearUCB；记录探测信号与额外开销。
+- **训练接入：**修正所选 assistant turn 的 advantage，零差值保持零，零预算退化为普通 GRPO。
+- **环境与执行：**公开 RAGEN 数据适配、Sokoban AgentLoop、LoRA／FSDP2／vLLM 链路。
 
-## 快速开始（CPU，无需下载模型）
+当前 B=2 实现先选择两条 episode，再分别选择 turn；尚未实现组内所有候选的全局 top-B。局部奖励差也不等于完整因果贡献。
 
-核心包和 smoke test 只依赖 Python 标准库。
+## 快速开始
 
-```bash
-cd ProbeGRPO
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e .
-make check
-```
-
-干净 clone、固定的 `verl` patch、数据/模型来源及 GPU smoke/run 要求见 [REPRODUCE.md](REPRODUCE.md)。
-
-如果已有环境，只需激活环境并运行 `make check`。本机 macOS 环境用于开发和 CPU 测试；verl、PyTorch CUDA 和 vLLM 应在独立的 NVIDIA Linux 环境中安装。
-
-## CPU smoke 验证
-
-不安装项目也可以单独检查 CPU 数据流：
+CPU 演示需要 Python 3.9+，核心包依赖标准库，无需 GPU、模型下载或 API Key。在仓库根目录执行：
 
 ```bash
 bash scripts/run_cpu_smoke.sh
 ```
 
-成功时末行应为：
+脚本验证核心探测与 advantage 数据流，以及微型 Agent 环境交互。核心 smoke 的成功标志为 `ProbeGRPO CPU data-flow smoke test passed`；这些演示不是正式训练成绩。
 
-```text
-ProbeGRPO CPU data-flow smoke test passed
-```
-
-## 当前 verl + Qwen3.5
-
-默认模型为 [`Qwen/Qwen3.5-2B`](https://huggingface.co/Qwen/Qwen3.5-2B)。RAGEN 发布版本的训练依赖较旧，不能直接满足该模型，因此 ProbeGRPO 固定了一个较新的 verl revision 及其依赖锁，并显式覆盖 NumPy 版本为 2.3.5。在 AutoDL 上的一台 48 GB NVIDIA GPU Linux 实例中，可按以下步骤准备环境：
+需要安装包时：
 
 ```bash
-bash scripts/check_gpu_host.sh /path/to/persistent-workspace
-bash scripts/bootstrap_verl.sh /path/to/persistent-workspace/probegrpo-runtime
-export MODEL_PATH=/path/to/persistent-workspace/models/Qwen3.5-2B-15852e8
-/path/to/persistent-workspace/probegrpo-runtime/verl/.venv/bin/python scripts/download_model.py --output-dir "$MODEL_PATH"
-bash scripts/check_verl_stack.sh /path/to/persistent-workspace/probegrpo-runtime/verl
-bash scripts/run_verl_grpo_smoke.sh /path/to/persistent-workspace/probegrpo-runtime/verl
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+make check
 ```
 
-首次付费运行刻意选 GSM8K，而不是 Agent 环境。先验证模型加载、vLLM 生成、LoRA/FSDP2 更新、grouped GRPO、checkpoint 保存和恢复训练，再引入 Sokoban 的复杂性。详见 [GPU 运行手册](docs/GPU_RUNBOOK.md)。
+GPU 训练使用独立 NVIDIA Linux 环境。按[完整复现说明](REPRODUCE.md)、[GPU 手册](docs/GPU_RUNBOOK.md)及 [AgentLoop 手册](docs/SOKOBAN_AGENTLOOP.md)准备固定框架、数据和模型；CPU 演示不会触发这些步骤。
 
-ProbeGRPO 的适配器要求 trainer batch 含有以下张量：
+## 代码与证据
 
-- `advantages`：`[batch, tokens]`
-- `probe_turn_masks`：`[batch, anchors, tokens]`
-- `probe_deltas`：`[batch, anchors]`
-- `probe_valid`：`[batch, anchors]`
+| 模块 | 位置 |
+|---|---|
+| 类型、回放与状态校验 | [types.py](src/probegrpo/types.py) · [replay.py](src/probegrpo/replay.py) |
+| 探测与选点 | [probing.py](src/probegrpo/probing.py) · [episode_probing.py](src/probegrpo/episode_probing.py) · [schedulers.py](src/probegrpo/schedulers.py) |
+| 局部 credit 与批次对齐 | [advantage.py](src/probegrpo/advantage.py) · [verl sidecar](src/probegrpo/integration/verl_v1_sidecar.py) |
+| 多轮环境接入 | [Sokoban AgentLoop](src/probegrpo/integration/sokoban_agent_loop.py) |
+| 正式实验与数据 | [公开 Sokoban 结果](experiments/results/public_sokoban_main_v1/) |
+| 故障、约束与负结果 | [问题复盘](docs/incidents/README.md) |
+| 固定版本与外部归档 | [保存清单](repro/ARTIFACTS.md) · [仓库盘点](REPO_AUDIT.md) |
 
-实现会将有效 delta 除以本 batch 内 `max(1, 最大绝对 delta)`，并把 `lambda * normalized_delta * turn_mask` 加到原始 advantage 上。事实和反事实奖励相同（delta 为零）时，credit 也始终为零。
-
-## 项目里程碑
-
-1. **核心正确性：**`make check` 通过，测试确定性重放及 token mask 下的 advantage。
-2. **GPU 栈 gate：**Qwen3.5-2B 在当前 verl 上完成五次标准 GRPO update，并能恢复训练。
-3. **Agent rollout：**RAGEN 衍生的 Sokoban 任务完成当前 verl 多轮 `AgentLoop` rollout 和确定性前缀重放。
-4. **同预算比较：**GRPO、Random、Surprisal、LinearUCB 均完成三个种子。
-5. **作品集整理：**结果表和成本图已完成；轨迹演示及可选的 WebShop 扩展尚未完成。
-
-作为实习作品集，解释清楚的负结果也有价值。不要捏造提升；如果额外 probe 改善了 credit 诊断，却没有提升最终奖励，也应如实报告。
-
-在一张 GPU 上运行可复现的消融：
-
-```bash
-bash scripts/run_sokoban_ablation.sh /root/autodl-tmp/probegrpo-runtime/verl main
-```
-
-将 `SEED` 设为 17、42 或 101。运行器会生成每个 seed 的 JSON 和 Markdown 表格。执行 `make results` 可重新生成已提交的三种子汇总和 SVG。当前 budget 实现会在每个 prompt group 的四条 episode 中先选前 `B` 条，再在每条选中的 episode 内选一个 turn；它还不是对整组 episode/turn 候选做全局 top-B 排序。
-
-## 评估指标
-
-- 任务奖励和成功率；
-- 非法动作率和平均 episode 长度；
-- reward/advantage 方差；
-- rollout token 总数、GPU 小时数和墙钟时间；
-- 每 1,000 个额外 rollout token 找到的高影响 anchor 数；
-- Sokoban 探测排序与穷举 counterfactual oracle 的相关性。
-
-## 仓库规范
-
-- 原始轨迹、checkpoint 和 W&B 文件放在 Git 忽略的 `artifacts/`、`outputs/` 或 `wandb/` 中。
-- 完整可恢复 checkpoint 保存在 Git 以外。只有完成真实导出与核验后才发布便携 adapter；目前没有主实验 adapter。
-- 不提交 API key、cookie、WebShop session 或未脱敏外部轨迹。
-- 结果必须包含精确配置、Git revision、种子和失败运行。
-- 环境准备时从固定 commit 获取上游 `verl`；本仓库不 vendoring 整个框架。ProbeGRPO 对 trainer 的改动保存在 `patches/verl-probegrpo.patch`，由 `scripts/bootstrap_verl.sh` 应用。
-
-## 简历描述
-
-> 在当前 verl 上构建了 ProbeGRPO Qwen3.5 Agent-RL 系统，支持确定性 counterfactual 重放、预算感知的 anchor 选点和 turn-local advantage shaping；公开 Sokoban 三种子结果从 24.0% ± 2.0% 提升至 31.0% ± 1.2%，额外 rollout token 成本为 1.516 倍。
+项目实现与记录用于研究和复现，不声称反事实信用分配本身是原创方法。相关运行与评测项目为 [SWE-HarnessLab](https://github.com/brwjf4y9hz-collab/SWE-HarnessLab)；两个项目各自报告任务与成绩。
