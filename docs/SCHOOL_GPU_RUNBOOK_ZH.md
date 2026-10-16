@@ -51,6 +51,34 @@ Ray临时文件及checkpoint放在另行确认有权限、有配额的大文件�
 不得仅依赖`.gitignore`：它防止提交，不限制磁盘占用。未知空间时不自动删checkpoint、日志或缓存，
 也不以减少训练步数/种子/对照组替代存储准备。
 
+### ensurepip recovery：不改系统包，继续失败的安装
+
+Ubuntu系统Python若缺`ensurepip`，首次bootstrap可能已准备好固定verl源码和补丁，但尚未安装uv及训练依赖。
+这不是CUDA错误，也不能因为源码校验通过便记录为环境安装成功。不必使用sudo安装系统包；可以安装
+[固定版本的官方独立uv](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer)，
+并用[unmanaged模式](https://docs.astral.sh/uv/reference/installer/#unmanaged-installations)避免修改shell配置。
+
+先更新到包含此修复的发布分支。下面的`RUNTIME`必须替换为已批准、确认为本项目失败安装的绝对路径：
+
+```bash
+(
+set -e
+RUNTIME=/approved/large-storage/probegrpo-runtime
+test -d "$RUNTIME/verl/.git"
+curl -fL --retry 3 https://astral.sh/uv/0.12.15/install.sh \
+  -o "$RUNTIME/uv-install-0.12.15.sh"
+UV_UNMANAGED_INSTALL="$RUNTIME/bootstrap/bin" sh "$RUNTIME/uv-install-0.12.15.sh"
+test "$("$RUNTIME/bootstrap/bin/uv" --version)" = 'uv 0.12.15'
+bash scripts/bootstrap_verl.sh "$RUNTIME" --resume
+)
+```
+
+`--resume`仅继续**未完成的环境安装**，不是训练checkpoint恢复：保留现有文件，重新核验固定verl与精确补丁，
+再按同一锁文件安装。它拒绝缺失/无框架目录、根符号链接、已有完成manifest或错误本地uv版本；默认仍拒绝覆盖。
+缓存、managed Python、可执行文件链接及pip缓存默认位于runtime，不需要改`HOME`。
+不要删除失败目录或反复运行旧版脚本；若再次失败，保留输出定位，不擅自升级训练依赖。
+本地shell流程测试用模拟工具，不证明学校Linux实际安装完成；以真实`Runtime prepared`及后续依赖检查为准。
+
 ## 4. 选择执行profile，不改实验矩阵
 
 - `single_48gb`始终保留为默认；不能在24GB卡上误用它然后降低显存检查门槛。
