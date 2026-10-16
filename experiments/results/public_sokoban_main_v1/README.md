@@ -1,6 +1,6 @@
 # 公开 Sokoban 主实验 v1 结果
 
-本目录保存首个完整 ProbeGRPO 对比实验的精简版、已提交记录。原始 episode sidecar、trainer 日志和 checkpoint 位于 Git 忽略的 AutoDL `outputs/` 目录；每 seed CSV 根据其生成的 `summary.json` 转录，没有挑选有利运行。奖励为二元值，测试集有 128 项，因此 `success_count` 是各记录成功率所对应的精确分子。
+本目录保存首个完整ProbeGRPO对比的精简记录。原始episode sidecar和trainer日志位于AutoDL归档；主实验当时没有保存最终checkpoint，早期GPU gate权重不能冒充主实验权重。每seed CSV按归档精确记录恢复，没有挑选有利运行；128项二值评估的success_count是精确分子。
 
 ## 固定实验协议
 
@@ -48,9 +48,19 @@ Surprisal-B2 的数值均值最高（`31.2%`），但额外 rollout token 更多
 
 - 三个 seed 支持作品集级重复性记录，不支持正式显著性结论。
 - LinearUCB 是本次跨种子波动最低的调度器，但**没有**赢得每千 token 高影响 anchor 指标。Random-B2 平均 `11.93`，LinearUCB `11.32`，Surprisal `10.44`，因此原先的 anchor 效率主张不成立。
-- LinearUCB 未达到原定 `<=1.5x` rollout-token 成本目标，高出 1.7 个百分点。应报告实测 `1.516x`，不要向下取整掩盖。
+- LinearUCB未达到原定`<=1.5x`目标，精确均值约1.5164×，高约1.64个百分点；旧舍入记录会显示1.517×。
 - 当前 budget 2 是在每组四条 rollout 中先选前两条 episode，再各选一个 turn；不是全组 top-B 选择。
 - Seed 17 的 GRPO 臂在 PPO mini-batch padding 修复前完成并被保留，因为其合成行的 loss mask 为零。Seed 42 和 101 全程使用最终配置。论文级主张前应重跑 seed 17 GRPO。
+- 旧warm-up存在最早非空桶偏置；修复后代码尚无新GPU结果。50步不是收敛证据，额外token与credit的作用没有被旧实验分离。
+
+## 补充证据与后续协议
+
+- [原始逐步曲线](training_history/README.md)：12runs、600updates、72次验证，无平滑，±为样本SD。
+- [正/负/零credit案例](trajectory_demo/README.md)：来源哈希、单动作重放；不伪造未保存的完整suffix。
+- [anchor审计](anchor_audit/README.md)：612个warm-up anchor及候选桶机会，首次真实排名step28。
+- [状态重用审计](state_group_audit/README.md)：六组GRPO/UCB、4800条训练episode；不是GiGPO训练。
+- [内存与时延](engineering_audit/summary.md)：旧12组log指标，不是匹配优化前后对照。
+- [新200步协议](../../../docs/FINAL_CONTROLS_ZH.md)：独立目录与正式验收，不能与本目录混算。
 
 ## 实验主机原始结果目录
 

@@ -24,6 +24,8 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
 verl = ["torch>=2.4", "omegaconf>=2.3"]
+plots = ["matplotlib>=3.9,<3.11"]
+tracking = ["swanlab==0.10.2"]
 
 [project.scripts]
 probegrpo-smoke = "probegrpo.smoke:main"

@@ -1,0 +1,6 @@
+# Preserve audited CSV bytes (csv.writer emits CRLF); do not rewrite provenance for style.
+*.csv whitespace=cr-at-eol
+# Matplotlib SVG path whitespace is generated, not hand-edited source.
+docs/assets/public_sokoban_training/*.svg -whitespace
+docs/assets/public_sokoban_training/* linguist-generated=true
+experiments/results/public_sokoban_main_v1/state_group_audit/**/groups.csv linguist-generated=true

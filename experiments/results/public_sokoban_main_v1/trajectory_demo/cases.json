@@ -1,0 +1,121 @@
+{
+  "selection": "first valid positive/negative/zero by numeric step then filename; illustrative, not representative",
+  "run": "outputs/ablation-bbba7a8-mem25-seed17/linear_ucb_b2",
+  "model_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "scope": "historical v1 model-generated reward records; single-action boards independently replayed on CPU; no suffix regenerated",
+  "cases": [
+    {
+      "sign": "positive",
+      "training_seed": 17,
+      "source": "rollouts/episodes/step-2/5e76e9e4766ff1a6da6ed84268fae1489d2d3703d0f790af7b3b8f4bfe823973.json",
+      "source_sha256": "16e42d8b4e49461fd66a2083f769b713ac72abd4d73efdc24bf0e4b44306fe59",
+      "task_id": "ragen-public-v1:IyMjIyMjCiMgICAgIwojQCQgLiMKIyMgICAjCiMjIyMjIwojIyMjIyM",
+      "environment_seed": 10071,
+      "max_horizon": 12,
+      "anchor_turn_id": 1,
+      "action_prefix": [
+        "right"
+      ],
+      "board_before_anchor": "######\n#    #\n# @$.#\n##   #\n######\n######",
+      "factual_action": "right",
+      "counterfactual_action": "left",
+      "factual_next_board": "######\n#    #\n#  @*#\n##   #\n######\n######",
+      "counterfactual_next_board": "######\n#    #\n#@ $.#\n##   #\n######\n######",
+      "factual_reward": 1.0,
+      "counterfactual_reward": 0.0,
+      "delta": 1.0,
+      "probe_tokens": 20,
+      "assistant_response_indices": [
+        61,
+        62
+      ],
+      "scheduler": "linear_ucb_warmup",
+      "main_actions": [
+        "right",
+        "right"
+      ]
+    },
+    {
+      "sign": "negative",
+      "training_seed": 17,
+      "source": "rollouts/episodes/step-1/47e6377a25612bc759522715990e3fc31c041724e118d0dfb212becb6c6b3f46.json",
+      "source_sha256": "7cb9e5a20750b2b754bd82d0f0873a586ca86e7cc5c9508f499d0a1555e3a2df",
+      "task_id": "ragen-public-v1:IyMjIyMjCiMjIyBAIwojIyMgJCMKIyMjIyAjCiMjIyAuIwojIyMjIyM",
+      "environment_seed": 10303,
+      "max_horizon": 12,
+      "anchor_turn_id": 1,
+      "action_prefix": [
+        "down"
+      ],
+      "board_before_anchor": "######\n###  #\n### @#\n####$#\n### .#\n######",
+      "factual_action": "up",
+      "counterfactual_action": "down",
+      "factual_next_board": "######\n### @#\n###  #\n####$#\n### .#\n######",
+      "counterfactual_next_board": "######\n###  #\n###  #\n####@#\n### *#\n######",
+      "factual_reward": 0.0,
+      "counterfactual_reward": 1.0,
+      "delta": -1.0,
+      "probe_tokens": 20,
+      "assistant_response_indices": [
+        60,
+        61
+      ],
+      "scheduler": "linear_ucb_warmup",
+      "main_actions": [
+        "down",
+        "up",
+        "down",
+        "up",
+        "down",
+        "up",
+        "down",
+        "up",
+        "down",
+        "up",
+        "left",
+        "up"
+      ]
+    },
+    {
+      "sign": "zero",
+      "training_seed": 17,
+      "source": "rollouts/episodes/step-1/3d878b9719ad20a747e9b895ec7468b95cd1026d599c6ff0348d6d4343513aa9.json",
+      "source_sha256": "073be8adce24eec9a4710e4bf956b85912cb8261f7ff0304b92c819b722b6ebf",
+      "task_id": "ragen-public-v1:IyMjIyMjCiMgQCMjIwojICQgIyMKIyMgIyMjCiMgLiAjIwojIyMjIyM",
+      "environment_seed": 10114,
+      "max_horizon": 12,
+      "anchor_turn_id": 1,
+      "action_prefix": [
+        "left"
+      ],
+      "board_before_anchor": "######\n#@ ###\n# $ ##\n## ###\n# . ##\n######",
+      "factual_action": "down",
+      "counterfactual_action": "right",
+      "factual_next_board": "######\n#  ###\n#@$ ##\n## ###\n# . ##\n######",
+      "counterfactual_next_board": "######\n# @###\n# $ ##\n## ###\n# . ##\n######",
+      "factual_reward": 0.0,
+      "counterfactual_reward": 0.0,
+      "delta": 0.0,
+      "probe_tokens": 40,
+      "assistant_response_indices": [
+        56,
+        57
+      ],
+      "scheduler": "linear_ucb_warmup",
+      "main_actions": [
+        "left",
+        "down",
+        "right",
+        "left",
+        "right",
+        "left",
+        "up",
+        "right",
+        "left",
+        "down",
+        "up",
+        "right"
+      ]
+    }
+  ]
+}
