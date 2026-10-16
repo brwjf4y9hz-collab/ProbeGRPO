@@ -68,7 +68,7 @@ test -d "$RUNTIME/verl/.git"
 curl -fL --retry 3 https://astral.sh/uv/0.12.15/install.sh \
   -o "$RUNTIME/uv-install-0.12.15.sh"
 UV_UNMANAGED_INSTALL="$RUNTIME/bootstrap/bin" sh "$RUNTIME/uv-install-0.12.15.sh"
-test "$("$RUNTIME/bootstrap/bin/uv" --version)" = 'uv 0.12.15'
+"$RUNTIME/bootstrap/bin/uv" --version
 bash scripts/bootstrap_verl.sh "$RUNTIME" --resume
 )
 ```
@@ -76,6 +76,8 @@ bash scripts/bootstrap_verl.sh "$RUNTIME" --resume
 `--resume`仅继续**未完成的环境安装**，不是训练checkpoint恢复：保留现有文件，重新核验固定verl与精确补丁，
 再按同一锁文件安装。它拒绝缺失/无框架目录、根符号链接、已有完成manifest或错误本地uv版本；默认仍拒绝覆盖。
 缓存、managed Python、可执行文件链接及pip缓存默认位于runtime，不需要改`HOME`。
+版本由bootstrap检查：`uv 0.12.15 (x86_64-unknown-linux-gnu)`等括号内平台/构建信息允许存在，
+但不接受`0.12.150`、预发布后缀或其他uv版本；不要再对整行做相等比较。
 不要删除失败目录或反复运行旧版脚本；若再次失败，保留输出定位，不擅自升级训练依赖。
 本地shell流程测试用模拟工具，不证明学校Linux实际安装完成；以真实`Runtime prepared`及后续依赖检查为准。
 

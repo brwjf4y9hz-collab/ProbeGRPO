@@ -97,6 +97,31 @@ printf '%s\n' "$UV_PYTHON_INSTALL_DIR" "$UV_PYTHON_BIN_DIR" "$PIP_CACHE_DIR" "$H
         self.assertIn("Unexpected local uv version", result.stderr)
         self.assertFalse((self.runtime / "cache/uv/calls").exists())
 
+    def test_official_platform_metadata_does_not_reject_exact_version(self):
+        self.partial(version="0.12.15 (x86_64-unknown-linux-gnu)")
+        result = self.run_bootstrap("--resume")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("uv=uv 0.12.15 (x86_64-unknown-linux-gnu)",
+                      (self.runtime / "runtime_manifest.txt").read_text())
+
+    def test_path_uv_with_build_metadata_is_accepted(self):
+        self.partial(version="0.12.15 (fixture-hash fixture-date)")
+        shutil.copyfile(self.runtime / "bootstrap/bin/uv", self.fake_bin / "uv")
+        (self.runtime / "bootstrap/bin/uv").unlink()
+        result = self.run_bootstrap("--resume")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.runtime / "cache/uv/calls").is_file())
+
+    def test_version_prefix_and_prerelease_are_not_accepted(self):
+        for index, version in enumerate(("0.12.150", "0.12.15rc1", "0.12.15-dev",
+                                         "0.12.16 (x86_64-unknown-linux-gnu)")):
+            with self.subTest(version=version):
+                self.runtime = self.root / ("runtime-invalid-" + str(index))
+                self.partial(version=version)
+                result = self.run_bootstrap("--resume")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse((self.runtime / "cache/uv/calls").exists())
+
     def test_failed_framework_check_stops_before_dependency_sync(self):
         self.partial()
         self.executable(self.project / "scripts/setup_verl.sh", "exit 23\n")

@@ -38,13 +38,20 @@ mkdir -p "$UV_CACHE_DIR"
 # Rechecks the fixed commit, exact patch, and unexpected changes before any dependency sync.
 bash "$PROJECT_DIR/scripts/setup_verl.sh" "$VERL_DIR"
 UV_VERSION=0.12.15
+uv_is_pinned() {
+  local reported
+  reported="$("$1" --version)" || return 1
+  # Official binaries can append parenthesized platform/build metadata.
+  # Keep the complete version token exact (not a prefix match).
+  [[ "$reported" == "uv $UV_VERSION" || "$reported" == "uv $UV_VERSION ("*")" ]]
+}
 if [[ -x "$RUNTIME_DIR/bootstrap/bin/uv" ]]; then
   UV_BIN="$RUNTIME_DIR/bootstrap/bin/uv"
-  if [[ "$("$UV_BIN" --version)" != "uv $UV_VERSION" ]]; then
+  if ! uv_is_pinned "$UV_BIN"; then
     echo "Unexpected local uv version; preserving existing installation: $UV_BIN" >&2
     exit 1
   fi
-elif command -v uv >/dev/null 2>&1 && [[ "$(uv --version)" == "uv $UV_VERSION" ]]; then
+elif command -v uv >/dev/null 2>&1 && uv_is_pinned "$(command -v uv)"; then
   UV_BIN="$(command -v uv)"
 else
   if ! python3 -c 'import ensurepip' >/dev/null 2>&1; then
@@ -56,6 +63,10 @@ else
   python3 -m venv "$RUNTIME_DIR/bootstrap"
   "$RUNTIME_DIR/bootstrap/bin/python" -m pip install "uv==$UV_VERSION"
   UV_BIN="$RUNTIME_DIR/bootstrap/bin/uv"
+fi
+if ! uv_is_pinned "$UV_BIN"; then
+  echo "Expected uv $UV_VERSION before dependency installation: $UV_BIN" >&2
+  exit 1
 fi
 cd "$VERL_DIR"
 "$UV_BIN" sync --python 3.12.3 --frozen --all-packages --extra vllm --extra fsdp
