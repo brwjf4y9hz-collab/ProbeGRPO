@@ -46,6 +46,7 @@ def episode_turn_records(episode: Episode) -> tuple[TurnRecord, ...]:
                 final_reward=episode.final_reward,
                 terminal=False,
                 metadata={
+                    "trajectory_turns": len(episode.turns),
                     "uncertainty_statistic": "chosen_token_surprisal",
                     "logprobs_available": bool(logprobs),
                 },

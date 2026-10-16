@@ -65,7 +65,18 @@ class TurnRecord:
 
     @property
     def turn_fraction(self) -> float:
+        """Horizon-relative UCB feature (kept unchanged for v1 comparability)."""
         return self.turn_id / max(1, self.max_horizon)
+
+    @property
+    def trajectory_fraction(self) -> float:
+        """Observed-trajectory position for warm-up strata, including early stops."""
+        length = self.metadata.get("trajectory_turns")
+        if length is None:
+            return self.turn_fraction  # Older/core records have no observed length.
+        if isinstance(length, bool) or not isinstance(length, int) or length <= self.turn_id:
+            raise ValueError("trajectory_turns must be an integer greater than turn_id")
+        return self.turn_id / max(1, length - 1)
 
 
 @dataclass(frozen=True)

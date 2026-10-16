@@ -1,6 +1,8 @@
 """本文件用自动化断言锁定 schedulers 相关组件的输入约定、边界条件和预期行为；测试数据为验证样例，不代表正式实验结果。"""
 
 import unittest
+from collections import Counter
+from dataclasses import replace
 
 from probegrpo.schedulers import (
     EntropyScheduler,
@@ -33,6 +35,46 @@ def turn(index, entropy=1.0, action="left", legal_actions=("left", "right")):
 
 
 class SchedulerTest(unittest.TestCase):
+    def test_short_episode_strata_use_observed_length_not_horizon(self):
+        candidates = [replace(turn(i), max_horizon=12, metadata={"trajectory_turns": 3})
+                      for i in range(3)]
+        self.assertEqual([t.trajectory_fraction for t in candidates], [0, 0.5, 1])
+        self.assertLess(candidates[-1].turn_fraction, 1 / 3)
+        counts = Counter(
+            LinearUCBScheduler(seed=seed).select(candidates, 1)[0].turn.turn_id
+            for seed in range(600)
+        )
+        self.assertEqual(set(counts), {0, 1, 2})
+        self.assertTrue(all(140 <= count <= 260 for count in counts.values()), counts)
+
+    def test_single_anchor_warmup_covers_all_position_strata(self):
+        candidates = [turn(index) for index in range(6)]
+        # Production creates a seeded scheduler per episode and asks for one turn.
+        buckets = Counter(
+            min(2, int(LinearUCBScheduler(seed=seed).select(candidates, 1)[0].turn.turn_fraction * 3))
+            for seed in range(600)
+        )
+        self.assertEqual(set(buckets), {0, 1, 2})
+        self.assertTrue(all(140 <= count <= 260 for count in buckets.values()), buckets)
+
+    def test_warmup_rounds_are_balanced_unique_and_reproducible(self):
+        candidates = [turn(index) for index in range(6)]
+        for count in range(1, 8):
+            first = LinearUCBScheduler(seed=91).select(candidates, count)
+            second = LinearUCBScheduler(seed=91).select(candidates, count)
+            ids = [anchor.turn.turn_id for anchor in first]
+            self.assertEqual(ids, [anchor.turn.turn_id for anchor in second])
+            self.assertEqual(len(set(ids)), min(count, 6))
+            if count >= 3:
+                self.assertEqual({int(anchor.turn.turn_fraction * 3) for anchor in first[:3]},
+                                 {0, 1, 2})
+
+    def test_warmup_handles_empty_strata_and_ineligible_turns(self):
+        candidates = [turn(4), turn(5), turn(0, legal_actions=("left",))]
+        selected = LinearUCBScheduler(seed=7).select(candidates, 20)
+        self.assertEqual({anchor.turn.turn_id for anchor in selected}, {4, 5})
+        self.assertEqual(LinearUCBScheduler().select([], 1), [])
+
     def test_budget_zero_selects_nothing(self):
         candidates = [turn(0)]
         self.assertEqual(RandomScheduler().select(candidates, 0), [])

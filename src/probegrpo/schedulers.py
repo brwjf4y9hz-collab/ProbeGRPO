@@ -214,15 +214,19 @@ class LinearUCBScheduler(AnchorScheduler):##边训练边学习：什么样的 tu
         # warmup 阶段按位置分层抽样，避免样本只落在轨迹开头或结尾。
         buckets = {0: [], 1: [], 2: []}
         for turn in eligible:
-            bucket = min(2, int(_clip(turn.turn_fraction) * 3))
+            bucket = min(2, int(_clip(turn.trajectory_fraction) * 3))
             buckets[bucket].append(turn)
         for values in buckets.values():
             self._rng.shuffle(values)
 
         selected: List[TurnRecord] = []
         while len(selected) < count and any(buckets.values()):
-            for bucket in (0, 1, 2):
-                if buckets[bucket] and len(selected) < count:
+            # One anchor is selected per episode in the real AgentLoop. Randomize
+            # each round's non-empty strata, otherwise budget=1 always picks early.
+            active = [bucket for bucket, values in buckets.items() if values]
+            self._rng.shuffle(active)
+            for bucket in active:
+                if len(selected) < count:
                     selected.append(buckets[bucket].pop())
         return selected
 
