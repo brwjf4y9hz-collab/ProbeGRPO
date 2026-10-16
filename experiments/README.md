@@ -5,7 +5,7 @@
 | ID | 方法 | Probe 预算 | 选点方式 |
 |---|---|---:|---|
 | `grpo` | 标准 GRPO | 0 | 无 |
-| `random_b2` | 成本匹配的随机对照 | 2 | 分层随机 |
+| `random_b2` | 相同probe数量的随机对照 | 2 | 选中episode内均匀随机 |
 | `surprisal_b2` | 不确定性启发式 | 2 | chosen-token surprisal |
 | `linear_ucb_b2` | ProbeGRPO | 2 | 学习每个 rollout token 的价值 |
 
@@ -57,3 +57,18 @@ make results
 ## 结果保存规范
 
 机器可读原始记录放在 Git 忽略的 `outputs/*.jsonl` 中。Git 仅提交脱敏汇总、图、解析后的配置和含哈希的 manifest。负结果和崩溃运行也要留在表中。
+
+## 当前待跑v3：200步修复与对照
+
+新入口是 `scripts/run_final_controls.py`，协议为
+`experiments/protocols/public_sokoban_controls_v3_200.json`；默认只打印计划。
+四组为GRPO-K4、GRPO-K6、UCB probe-only λ=0、修复UCB λ=0.5，三个种子各200步，
+共12 runs、2400更新。step200是主终点，50/100/150是预先指定诊断，不选最优测试checkpoint。
+原v1结果/启动入口保留，不能把旧50步目录混入v3或拼接曲线。
+
+见[正式对照说明](../docs/FINAL_CONTROLS_ZH.md)与[硬件配置](../docs/HARDWARE_PROFILES_ZH.md)。
+保留48GB单卡默认；24GB单卡/双卡尚未验证；不减少模型、数据、batch、种子或步数来适配。
+K6不是自动等成本，必须按实际token/时间报告；GiGPO也未偷偷加入矩阵。
+
+逐步曲线/SwanLab说明见[tracking runbook](../docs/SWANLAB_AND_CURVES_ZH.md)。
+真实轨迹、位置偏置、状态重用和内存/时延审计均属旧实验再分析，不是新GPU结果。

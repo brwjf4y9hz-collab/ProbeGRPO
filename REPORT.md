@@ -1,6 +1,7 @@
 # ProbeGRPO 技术报告
 
-> 状态：已完成公开 Sokoban 三种子作品集实验；WebShop 属于可选扩展。
+> 状态：历史三种子50-step实验已完成；修复后的200-step四组对照已准备，尚未训练。
+> 中文工程复盘见 `docs/PROJECT_REVIEW_ZH.md`；GiGPO定位见 `docs/RELATED_WORK_ZH.md`。
 
 ## 摘要
 
@@ -56,7 +57,7 @@ A_final = A_GRPO + lambda * normalize(delta) * turn_mask
 
 ### 2.4 调度器
 
-- **Random-B2：**按轨迹位置分层随机选择 turn。
+- **Random-B2：**在被选episode的合法候选turn中均匀随机选择；位置分层用于UCB warm-up，不是Random调度器。
 - **Surprisal-B2：**优先选择 chosen-token surprisal 高的动作。此处不称作 entropy，因为 rollout 后端没有提供完整 next-token 分布。
 - **LinearUCB-B2：**在线线性 contextual bandit，根据额外 rollout token 归一化后的绝对 probe delta 估计价值，并加入不确定性 bonus 和随机 warm-up。
 
@@ -93,7 +94,7 @@ A_final = A_GRPO + lambda * normalize(delta) * turn_mask
 
 LinearUCB 在三个配对种子上都高于 GRPO：测试成功数分别多 9、10、8 道（每个种子共 128 道）。Random 在一个 seed 上提升很大，一个 seed 上小幅提升，另一个持平，因此整体波动更高。Surprisal 的数值均值高 0.2 个百分点，但与 seed 波动相比很小，且 rollout 成本比 LinearUCB 高 5.6 个百分点。
 
-调度器诊断不支持原先“LinearUCB 每单位 probe token 找到更多高影响 anchor”的假设。Random 平均为 `11.93`，LinearUCB 为 `11.32`。一种可能解释是二元 high-impact 计数没有考虑 delta 符号、训练相关性和 turn 位置，而 LinearUCB 的 credit 更稳定；但目前这仍是待检验解释，不能当作因果结论。
+调度器诊断不支持原先“LinearUCB 每单位 probe token 找到更多高影响 anchor”的假设。Random 平均为 `11.93`，LinearUCB 为 `11.32`。二元high-impact计数并未刻画delta方向、位置和训练价值；它也不足以排除调度的贡献。最终分数的跨种子SD不是credit估计方差，不能据此认定收益来自credit稳定性。
 
 ## 5. 工程故障与修复
 
@@ -107,15 +108,21 @@ LinearUCB 在三个配对种子上都高于 GRPO：测试成功数分别多 9、
 
 完整时间线和命令见 `experiments/environment/2026-09-21-public-ablation-incidents.md`。
 
+11.97GiB是失败时的额外申请，当时空闲7.17GiB，不是优化前峰值。多项执行设置同时变化，
+没有匹配的前后吞吐/显存消融；不编造优化百分比。12组历史运行的内存和step时间另见
+`experiments/results/public_sokoban_main_v1/engineering_audit/summary.md`，它不是整个共置GPU的总峰值或账单时长。
+
 ## 6. 局限
 
 1. 三个 seed 足以作为作品集中的重复性记录，但不足以作正式显著性声明。
-2. LinearUCB 的 rollout token 成本比原先 `1.5x` 上限高 1.7 个百分点。
+2. LinearUCB 的精确成本约1.5164×，比原先1.5×目标高约1.64个百分点；旧舍入汇总会显示1.517×。
 3. 当前 probe budget 先按 episode 选样本，还不是全组 top-B。
 4. Sokoban 使用二元终局奖励，因此很多 counterfactual 分支结果相同，调度器目标较粗。
 5. 前缀重放依赖确定性和可枚举动作；迁移到浏览器环境还需要控制 session 和隐藏状态。
 6. 一个事实动作与一个替代动作的局部差值不是该 turn 的完整因果贡献。
 7. 保留的 seed 17 GRPO 运行早于最终 PPO mini-batch padding 修正。虽然合成行的 loss mask 为零，但论文级配置一致性仍需重跑该 baseline。
+8. v1 warm-up固定桶顺序偏向最早非空桶，且直到step28才首次进入排名；612个warm-up anchor中610个处于horizon前段。当前修复了桶顺序和实际轨迹长度分桶，但不反向改旧结果。
+9. 50步只对应约0.39个数据集遍历量，未证明收敛。新版K6改变成本也改变GRPO估计，不自动等算力；λ=0有probe的整次训练也未必与无probe基线共享完全相同随机流。
 
 ## 7. 复现与作品集使用
 
@@ -124,3 +131,17 @@ LinearUCB 在三个配对种子上都高于 GRPO：测试成功数分别多 9、
 目前最稳妥的简历描述应强调 LinearUCB 配对结果的稳定性，而不是调度器优越性：
 
 > 在当前 verl 上构建了 ProbeGRPO Qwen3.5 Agent-RL 系统，支持确定性 counterfactual 重放、预算感知 anchor 选点和 turn-local advantage shaping；公开 Sokoban 三种子成功率从 24.0% ± 2.0% 提升到 31.0% ± 1.2%，额外 rollout token 成本为 1.516 倍。
+
+## 8. GiGPO：需要正面比较的近邻方法
+
+[GiGPO论文](https://arxiv.org/html/2505.10978v3)复用同任务组中重复状态的已有后续return，
+构造step-level相对优势，不需要为分组额外生成轨迹。ProbeGRPO主动付费采一对suffix，
+是否值得额外成本仍待实验。二者同为细粒度credit方向，不能宣称step-level或counterfactual思想原创。
+
+[官方实现](https://github.com/langfengQ/verl-agent/blob/master/gigpo/core_gigpo.py)涉及任务分组、
+逐步return、归一化和mask；不能只按任意state_hash减均值就称官方复现。
+本项目严格replay hash包含计数/seed，模型上下文又含历史，状态定义必须另行核对。
+六组旧训练轨迹的离线审计确认存在自然重用机会，但它不是GiGPO训练、advantage实现或因果结果。
+
+当前批准矩阵仍四组×三种子×200步，不自动加入第五组。GiGPO适配、参数与三个GPU运行需另行确认，
+不删现有对照来腾预算。详见 `docs/RELATED_WORK_ZH.md`。

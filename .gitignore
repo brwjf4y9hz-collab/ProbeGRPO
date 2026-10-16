@@ -7,6 +7,9 @@ artifacts/
 outputs/
 wandb/
 .env
+repro_outputs/
+.DS_Store
+._*
 
 probegrpo-runtime/verl/data/huggingface/
 

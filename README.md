@@ -10,6 +10,22 @@ ProbeGRPO 在 GRPO 训练链路中重放选中的决策状态，对比原动作�
 | 查看结果图与逐种子数据 | [结果分析](docs/results/README.md) |
 | 查看回放、选点与训练接入 | [系统架构](docs/ARCHITECTURE.md) |
 | 运行演示或准备 GPU 实验 | [快速开始](#快速开始) · [完整复现说明](REPRODUCE.md) |
+| 阅读新增复盘与面试材料 | [工程复盘](docs/PROJECT_REVIEW_ZH.md) · [面试提纲](docs/INTERVIEW_GUIDE_ZH.md) |
+| 理解近邻方法与实验缺口 | [GiGPO 对比](docs/RELATED_WORK_ZH.md) · [求职验收](docs/PORTFOLIO_ACCEPTANCE_ZH.md) |
+
+## 当前准备：修复后的 200-step 对照（尚未训练）
+
+历史 v1 的50-step结果保留。新协议为 GRPO-K4、GRPO-K6、probe-only λ=0 与完整 ProbeGRPO
+四组 × 三种子 × 200 updates；主终点固定step200。K6是更多主rollout对照，不自动等算力。
+详见[对照协议](docs/FINAL_CONTROLS_ZH.md)。默认只输出计划，不启动模型：
+
+```bash
+python3 scripts/run_final_controls.py --verl-dir /path/to/verl \
+  --protocol-file experiments/protocols/public_sokoban_controls_v3_200.json
+```
+
+保留48GB单卡默认；24GB单卡/双卡是待GPU验证的独立候选，不缩减模型、数据、batch或训练步数。
+见[硬件入口](docs/HARDWARE_PROFILES_ZH.md)。
 
 ## 实验结果
 
@@ -29,6 +45,15 @@ ProbeGRPO 在 GRPO 训练链路中重放选中的决策状态，对比原动作�
 **结果范围：**seed17 GRPO 存在历史 padding 配置差异；比较没有匹配总 token 预算。额外 token 比例以各方法自身的主 rollout token 为分母。误差线是样本标准差，不是置信区间；12 次运行评估的是同一批 128 个关卡。主实验最终权重未保存，轨迹与评估记录已有归档。
 
 [完整分析](docs/results/README.md) · [实验协议](experiments/results/public_sokoban_main_v1/README.md) · [归档核验](repro/validation/README.md)
+
+原12组训练已恢复600次更新和72次验证的[逐步曲线与来源](experiments/results/public_sokoban_main_v1/training_history/README.md)，
+支持 `make curves` 离线重画；依赖为可选 `plots` extra，不影响CPU核心。
+[SwanLab](docs/SWANLAB_AND_CURVES_ZH.md) 为显式开启，不默认登录/上传。
+新增[正负零真实轨迹案例](experiments/results/public_sokoban_main_v1/trajectory_demo/README.md)、
+[warm-up审计](experiments/results/public_sokoban_main_v1/anchor_audit/README.md)、
+[六组状态重用审计](experiments/results/public_sokoban_main_v1/state_group_audit/README.md)和
+[历史内存/时延摘要](experiments/results/public_sokoban_main_v1/engineering_audit/summary.md)。
+这些是旧记录的审计，不是新训练、GiGPO对照或credit稳定性机制证明。
 
 ## 方法与训练链路
 
@@ -70,6 +95,27 @@ make check
 ```
 
 GPU 训练使用独立 NVIDIA Linux 环境。按[完整复现说明](REPRODUCE.md)、[GPU 手册](docs/GPU_RUNBOOK.md)及 [AgentLoop 手册](docs/SOKOBAN_AGENTLOOP.md)准备固定框架、数据和模型；CPU 演示不会触发这些步骤。
+
+## CPU 正确性与发布验收
+
+不安装训练依赖，也可以运行单测与CPU数据流检查：
+
+```bash
+bash scripts/smoke_test.sh
+```
+
+提交后可用独立本地clone验证全部CPU检查和三种硬件的纯计划：
+
+```bash
+python3 scripts/check_clean_cpu.py --mode committed --output-dir outputs/clean-cpu-new
+```
+
+`--mode working-tree` 只验证未提交源码快照，不能冒充公开GitHub版本；见[发布检查](docs/RELEASE_CHECK_ZH.md)。
+缺少torch时张量测试明确跳过；CPU通过不证明GPU、24GB配置或checkpoint恢复成功。
+
+历史问题ZIP保持不变，用`python3 scripts/verify_incident_archive.py`核验其32份文件和8项问题记录。
+原`docs/incidents/verify_bundle.py`针对旧快照的live文件哈希；新源码演进后出现差异不等于ZIP损坏，不能重写旧manifest伪造一致。
+学校新机器的登录、只读资源检查和GPU启动门槛见[学校部署手册](docs/SCHOOL_GPU_RUNBOOK_ZH.md)。
 
 ## 代码与证据
 
