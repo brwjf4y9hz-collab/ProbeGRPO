@@ -1,0 +1,221 @@
+{
+  "audited_utc": "2026-10-13T08:34:32.431064+00:00",
+  "swanlab_version": "0.10.2",
+  "project_url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo",
+  "workspace": "brwjf4y9hz-collab",
+  "project_experiment_count": 12,
+  "checked_metrics": [
+    "training/global_step",
+    "actor/pg_loss",
+    "eval/success_rate",
+    "cost/cumulative_training_rollout_tokens",
+    "probe/extra_tokens"
+  ],
+  "runs": [
+    {
+      "experiment_name": "historical-public-sokoban-grpo-seed17",
+      "method": "grpo",
+      "seed": 17,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/6qqh90rl/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.2421875,
+      "metric_csv_sha256": "dcc41a1497e23e8924b5609d05ee3764555e02ff1a7d9df3dc6535a510afa3c2",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-random_b2-seed17",
+      "method": "random_b2",
+      "seed": 17,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/7ds6ew59/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.2734375,
+      "metric_csv_sha256": "0a16ef7ca75b8219201dbdcc2f53f0d496d5148ccf681dbfabe48fd62a9bb744",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-surprisal_b2-seed17",
+      "method": "surprisal_b2",
+      "seed": 17,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/zncg9ff6/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.2734375,
+      "metric_csv_sha256": "2677c88495b931f97847c4b5b67b63ab76b2411b0f44ce923146c0e20e85d019",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-linear_ucb_b2-seed17",
+      "method": "linear_ucb_b2",
+      "seed": 17,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/4gf0pcyv/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.3125,
+      "metric_csv_sha256": "38a3f49c545b1bbc8c034f2c716394ec14867c451edf8e01ee978eb70cbe1eb3",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-grpo-seed42",
+      "method": "grpo",
+      "seed": 42,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/3dia9fq4/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.21875,
+      "metric_csv_sha256": "a010b9bc5d449ed248c451dea9bac12f107d5e8549232faaa178f144f3e4cbae",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-random_b2-seed42",
+      "method": "random_b2",
+      "seed": 42,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/s9zimkno/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.34375,
+      "metric_csv_sha256": "e8da427b5bb419c45c8efdeceff744bf3a9e32ac86bc5374829cdb48e2b3e382",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-surprisal_b2-seed42",
+      "method": "surprisal_b2",
+      "seed": 42,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/0c2k770c/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.3359375,
+      "metric_csv_sha256": "40712f7839f74707a222c59ef04294da5b54bc251056ac956a08ea0e88080483",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-linear_ucb_b2-seed42",
+      "method": "linear_ucb_b2",
+      "seed": 42,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/q4rz77od/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.296875,
+      "metric_csv_sha256": "2e7a95330ed29a0682d5661cf6d9fac1661edb886d295f8432b10adaaf277082",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-grpo-seed101",
+      "method": "grpo",
+      "seed": 101,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/9g3qgjdv/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.2578125,
+      "metric_csv_sha256": "24aa7af5a1cfbdd76a90cea80319dec1e32a26f73540d5337c130a7245ac1727",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-random_b2-seed101",
+      "method": "random_b2",
+      "seed": 101,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/fia2s707/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.2578125,
+      "metric_csv_sha256": "784454f55772d1775e15d4d6fda65435fbb306e4fd0eb26946df3552e9f2d09f",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-surprisal_b2-seed101",
+      "method": "surprisal_b2",
+      "seed": 101,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/e2q6e5w6/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.328125,
+      "metric_csv_sha256": "496c7f597e5f2c81a8cd6a082d7743633f85d755007a7a31c6506e61e2945f33",
+      "cloud_values_match_source": true
+    },
+    {
+      "experiment_name": "historical-public-sokoban-linear_ucb_b2-seed101",
+      "method": "linear_ucb_b2",
+      "seed": 101,
+      "url": "https://swanlab.cn/@brwjf4y9hz-collab/probegrpo/runs/ddd14buw/chart",
+      "state": "FINISHED",
+      "metric_point_counts": {
+        "training/global_step": 50,
+        "actor/pg_loss": 50,
+        "eval/success_rate": 6,
+        "cost/cumulative_training_rollout_tokens": 51,
+        "probe/extra_tokens": 50
+      },
+      "final_val_success": 0.3203125,
+      "metric_csv_sha256": "ea753f2b3da7399e2c9ce42165ee12feae3f0e79cf9514deeff67ad1eeb27d62",
+      "cloud_values_match_source": true
+    }
+  ],
+  "verified_runs": 12
+}

@@ -1,0 +1,263 @@
+{
+  "created_utc": "2026-10-13T07:59:23.202433+00:00",
+  "source_root": "/root/autodl-tmp/ProbeGRPO/outputs",
+  "runs": [
+    {
+      "path": "ablation-bbba7a8-mem25-seed17/grpo",
+      "method": "grpo",
+      "seed": 17,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.2421875,
+      "file_sha256": {
+        "run_manifest.json": "2f76d16696d50f5d417827e27e7cbe73049ade8f0523b2f2cc97fa3c31e9d799",
+        "logs/train-50-steps.log": "7d335a6328b703fba60e80872b80fbe322d5c0b50c47576e1fbedec3f7841595"
+      }
+    },
+    {
+      "path": "ablation-bbba7a8-mem25-seed17/random_b2",
+      "method": "random_b2",
+      "seed": 17,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.2734375,
+      "file_sha256": {
+        "run_manifest.json": "2d77ee3666b666c1f009b9a23f5949db28d3dfa830932353944850b69d7b4710",
+        "logs/train-50-steps.log": "09eb8ec588e0c8cd5aedd11d2b56a0f94fef3d174a0782fa7eb74b34cda77f62"
+      }
+    },
+    {
+      "path": "ablation-bbba7a8-mem25-seed17/surprisal_b2",
+      "method": "surprisal_b2",
+      "seed": 17,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.2734375,
+      "file_sha256": {
+        "run_manifest.json": "f57d04c262a9f17a4121755bdf10259d814a0798b37880f88cd5640b67b318a7",
+        "logs/train-50-steps.log": "0b2504b4349aef8e0548a15e8b193d49bcaeaeece4fe095cd83b32a27335ce1a"
+      }
+    },
+    {
+      "path": "ablation-bbba7a8-mem25-seed17/linear_ucb_b2",
+      "method": "linear_ucb_b2",
+      "seed": 17,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.3125,
+      "file_sha256": {
+        "run_manifest.json": "3a76e5ad044dbe33fad39538617396cf974af8f383331cb6b47e27f6d3ab6b04",
+        "logs/train-50-steps.log": "fd562f4a47fdb9ccbc0090885bbb652595ebe326f18cf4698b58591f13f7c761"
+      }
+    },
+    {
+      "path": "ablation-main-v1-seed42/grpo",
+      "method": "grpo",
+      "seed": 42,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.21875,
+      "file_sha256": {
+        "run_manifest.json": "77b3532b73438e2ead3483a3da3950f4ca3f13d1332ca9ca162602913095e9fa",
+        "logs/train-50-steps.log": "9f42cdaf79098e01bdb730fa60ab8c17941506ccc412d4c3a3226c6cf0f32bed"
+      }
+    },
+    {
+      "path": "ablation-main-v1-seed42/random_b2",
+      "method": "random_b2",
+      "seed": 42,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.34375,
+      "file_sha256": {
+        "run_manifest.json": "3f848a55a95edc3f775f42260bccf7e705417d7e1828b0fd6670e207d63e11de",
+        "logs/train-50-steps.log": "be2b04fd926413784115fbae30ff7d42fe126dc037ecd8ada9eb1951e59b161c"
+      }
+    },
+    {
+      "path": "ablation-main-v1-seed42/surprisal_b2",
+      "method": "surprisal_b2",
+      "seed": 42,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.3359375,
+      "file_sha256": {
+        "run_manifest.json": "8c00ac78292314eb9a8020b6774e05e3f943c8e127f20414d098b989c98b8791",
+        "logs/train-50-steps.log": "044be99263c8a16e80e7746822cc8791ec34c39faf8cdf1d5080f87960244f99"
+      }
+    },
+    {
+      "path": "ablation-main-v1-seed42/linear_ucb_b2",
+      "method": "linear_ucb_b2",
+      "seed": 42,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.296875,
+      "file_sha256": {
+        "run_manifest.json": "6be33cdb58694896aaada6f330410a1159e6d3884c641d91b9efa75b626bc8d6",
+        "logs/train-50-steps.log": "351b11af477415ba6fd6d05f1df22543d9118103d0bfe2849bba9c5840e26f2a"
+      }
+    },
+    {
+      "path": "ablation-main-v1-seed101/grpo",
+      "method": "grpo",
+      "seed": 101,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.2578125,
+      "file_sha256": {
+        "run_manifest.json": "24b98921438f0c5d342136448d32c219198d6f2ef724c231d2eedb0d8e4a8cfe",
+        "logs/train-50-steps.log": "9cc47b452339ed7c93e4280862fa70265b4d85f99ca073683bdd6a1168bb4a64"
+      }
+    },
+    {
+      "path": "ablation-main-v1-seed101/random_b2",
+      "method": "random_b2",
+      "seed": 101,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.2578125,
+      "file_sha256": {
+        "run_manifest.json": "86bba3e5eaa5f895f3dcff33bdd2ace59b0910e46e21bd56103921b99a2eaafb",
+        "logs/train-50-steps.log": "269ec58734a0daf8b98398f01cb33b15d0cf179df0779603981790fe742f28b8"
+      }
+    },
+    {
+      "path": "ablation-main-v1-seed101/surprisal_b2",
+      "method": "surprisal_b2",
+      "seed": 101,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.328125,
+      "file_sha256": {
+        "run_manifest.json": "d7ef208fc1c5f9ed6692a089dd72323b3ebb95ffd009f7cd949cff643d251223",
+        "logs/train-50-steps.log": "355cf3cf1c1ed2ba9ac155ad7eb11509c5a400c8e146a19d0dadd1be2af0b9fb"
+      }
+    },
+    {
+      "path": "ablation-main-v1-seed101/linear_ucb_b2",
+      "method": "linear_ucb_b2",
+      "seed": 101,
+      "metric_rows": 51,
+      "training_steps": 50,
+      "validation_steps": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      "final_val_success": 0.3203125,
+      "file_sha256": {
+        "run_manifest.json": "9c9cc06dfa1a1882256af96be604498c13df9b5571a0571e884d8487531a684c",
+        "logs/train-50-steps.log": "20d5f8b1a51855c5efde7638ad316a3ca144923e2cdbea3ae87ef6d2867b9f3b"
+      }
+    }
+  ],
+  "reference_checks": "12 final success/count/token totals match per_seed.csv",
+  "seed_band": "sample standard deviation, n=3; not a confidence interval",
+  "smoothing": "none",
+  "metric_csv_sha256": {
+    "ablation-bbba7a8-mem25-seed17/grpo": "dcc41a1497e23e8924b5609d05ee3764555e02ff1a7d9df3dc6535a510afa3c2",
+    "ablation-bbba7a8-mem25-seed17/random_b2": "0a16ef7ca75b8219201dbdcc2f53f0d496d5148ccf681dbfabe48fd62a9bb744",
+    "ablation-bbba7a8-mem25-seed17/surprisal_b2": "2677c88495b931f97847c4b5b67b63ab76b2411b0f44ce923146c0e20e85d019",
+    "ablation-bbba7a8-mem25-seed17/linear_ucb_b2": "38a3f49c545b1bbc8c034f2c716394ec14867c451edf8e01ee978eb70cbe1eb3",
+    "ablation-main-v1-seed42/grpo": "a010b9bc5d449ed248c451dea9bac12f107d5e8549232faaa178f144f3e4cbae",
+    "ablation-main-v1-seed42/random_b2": "e8da427b5bb419c45c8efdeceff744bf3a9e32ac86bc5374829cdb48e2b3e382",
+    "ablation-main-v1-seed42/surprisal_b2": "40712f7839f74707a222c59ef04294da5b54bc251056ac956a08ea0e88080483",
+    "ablation-main-v1-seed42/linear_ucb_b2": "2e7a95330ed29a0682d5661cf6d9fac1661edb886d295f8432b10adaaf277082",
+    "ablation-main-v1-seed101/grpo": "24aa7af5a1cfbdd76a90cea80319dec1e32a26f73540d5337c130a7245ac1727",
+    "ablation-main-v1-seed101/random_b2": "784454f55772d1775e15d4d6fda65435fbb306e4fd0eb26946df3552e9f2d09f",
+    "ablation-main-v1-seed101/surprisal_b2": "496c7f597e5f2c81a8cd6a082d7743633f85d755007a7a31c6506e61e2945f33",
+    "ablation-main-v1-seed101/linear_ucb_b2": "ea753f2b3da7399e2c9ce42165ee12feae3f0e79cf9514deeff67ad1eeb27d62"
+  }
+}

@@ -1,6 +1,8 @@
 # 项目快捷目标：test 运行自动化测试，smoke/agent-smoke 执行 CPU 数据流演练，
 # results 汇总并绘制已归档结果，check 组合执行代码检查、演练和 shell 语法检查。
-.PHONY: test smoke agent-smoke results check-scripts check
+.PHONY: test smoke agent-smoke results curves check-scripts check
+
+PLOT_PYTHON ?= python3
 
 test:
 	PYTHONPATH=src python3 -m unittest discover -s tests -v
@@ -21,5 +23,11 @@ results:
 
 check-scripts:
 	@for script in scripts/*.sh; do bash -n "$$script" || exit; done
+
+curves:
+	$(PLOT_PYTHON) scripts/plot_training_comparison.py \
+		--history-csv experiments/results/public_sokoban_main_v1/training_history/per_step.csv \
+		--reference experiments/results/public_sokoban_main_v1/per_seed.csv \
+		--figures-dir docs/assets/public_sokoban_training
 
 check: test smoke agent-smoke check-scripts

@@ -1,0 +1,22 @@
+{
+  "name": "dual_24gb",
+  "experimental": true,
+  "evidence": "configuration candidate only; requires FSDP2/TP2 compatibility and memory gate on actual host",
+  "gpu_count": 2,
+  "min_memory_mib": 23000,
+  "min_free_fraction": 0.9,
+  "hydra_overrides": {
+    "trainer.nnodes": 1,
+    "trainer.n_gpus_per_node": 2,
+    "actor_rollout_ref.actor.fsdp_config.fsdp_size": 2,
+    "actor_rollout_ref.actor.fsdp_config.param_offload": true,
+    "actor_rollout_ref.actor.fsdp_config.optimizer_offload": true,
+    "actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu": 1,
+    "actor_rollout_ref.actor.ppo_max_token_len_per_gpu": 2048,
+    "actor_rollout_ref.actor.entropy_from_logits_chunk_size": 128,
+    "actor_rollout_ref.rollout.tensor_model_parallel_size": 2,
+    "actor_rollout_ref.rollout.gpu_memory_utilization": 0.25,
+    "actor_rollout_ref.rollout.max_num_batched_tokens": 2048,
+    "actor_rollout_ref.rollout.max_num_seqs": 4
+  }
+}

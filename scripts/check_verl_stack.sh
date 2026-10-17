@@ -25,6 +25,7 @@ if [[ ! -x "$VERL_DIR/.venv/bin/python" ]]; then
 fi
 
 cd "$VERL_DIR"
+"$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/install_verl_dense_entropy.py" "$VERL_DIR" --check-only
 export HF_HOME="${HF_HOME:-$VERL_DIR/data/huggingface}"
 export HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 本脚本执行 run public sokoban train 对应的仓库流程；具体参数、环境变量和命令保持原样。
+# 公开 Sokoban 入口；保留固定 verl patch 验证，实际参数写入 manifest。
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
@@ -18,6 +18,8 @@ PROBE_SCHEDULER="${PROBE_SCHEDULER:-random}"
 PROBE_LAMBDA="${PROBE_LAMBDA:-0.5}"
 TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-50}"
 SAVE_FREQ="${SAVE_FREQ:-$TOTAL_TRAINING_STEPS}"
+ROLLOUTS_PER_PROMPT="${ROLLOUTS_PER_PROMPT:-4}"
+RUN_PROTOCOL="${RUN_PROTOCOL:-custom}"
 TRAIN_LIMIT="${TRAIN_LIMIT:-512}"
 TEST_LIMIT="${TEST_LIMIT:-128}"
 MAX_TURNS="${MAX_TURNS:-12}"
@@ -51,26 +53,17 @@ if [[ ! -f "$DATA_DIR/train.parquet" || ! -f "$DATA_DIR/test.parquet" ]]; then
     --max-turns "$MAX_TURNS"
 fi
 
-bash "$PROJECT_DIR/scripts/setup_verl.sh" "$VERL_DIR"
-"$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/write_run_manifest.py" \
-  --project-dir "$PROJECT_DIR" \
-  --verl-dir "$VERL_DIR" \
-  --data-dir "$DATA_DIR" \
-  --output-dir "$OUTPUT_DIR" \
-  --method "$METHOD" \
-  --seed "$SEED" \
-  --budget "$PROBE_BUDGET" \
-  --scheduler "$PROBE_SCHEDULER" \
-  --lambda-coef "$PROBE_LAMBDA" \
-  --model "$MODEL_PATH" \
-  --model-revision "$MODEL_REVISION" \
-  --steps "$TOTAL_TRAINING_STEPS" \
-  --save-freq "$SAVE_FREQ" \
-  --hydra-overrides "$@"
-
-bash "$PROJECT_DIR/scripts/run_verl_sokoban_smoke.sh" "$VERL_DIR" \
+if [[ -f "$PROJECT_DIR/scripts/setup_verl.sh" ]]; then
+  # Preserved remote releases verify the exact patch, not just the insertion marker.
+  bash "$PROJECT_DIR/scripts/setup_verl.sh" "$VERL_DIR"
+else
+  "$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/install_verl_v1_probe_hook.py" "$VERL_DIR"
+fi
+HYDRA_OVERRIDES=( \
   trainer.resume_mode=disable \
   trainer.save_freq="$SAVE_FREQ" \
+  ++actor_rollout_ref.actor.checkpoint.save_lora_only=true \
+  trainer.max_actor_ckpt_to_keep=1 \
   trainer.val_before_train=true \
   trainer.test_freq=10 \
   trainer.experiment_name="public-sokoban-${METHOD}-seed${SEED}" \
@@ -88,6 +81,7 @@ bash "$PROJECT_DIR/scripts/run_verl_sokoban_smoke.sh" "$VERL_DIR" \
   actor_rollout_ref.rollout.max_num_batched_tokens=2048 \
   actor_rollout_ref.rollout.gpu_memory_utilization=0.25 \
   actor_rollout_ref.rollout.seed="$SEED" \
+  actor_rollout_ref.rollout.n="$ROLLOUTS_PER_PROMPT" \
   +probe.enabled=true \
   +probe.budget="$PROBE_BUDGET" \
   +probe.scheduler="$PROBE_SCHEDULER" \
@@ -97,4 +91,15 @@ bash "$PROJECT_DIR/scripts/run_verl_sokoban_smoke.sh" "$VERL_DIR" \
   +probe.exploration_rate=0.1 \
   +probe.ucb_alpha=1.0 \
   +probe.ucb_l2=1.0 \
-  "$@"
+  "$@" )
+
+"$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/write_run_manifest.py" \
+  --project-dir "$PROJECT_DIR" --verl-dir "$VERL_DIR" --data-dir "$DATA_DIR" \
+  --output-dir "$OUTPUT_DIR" --method "$METHOD" --seed "$SEED" \
+  --budget "$PROBE_BUDGET" --scheduler "$PROBE_SCHEDULER" --lambda-coef "$PROBE_LAMBDA" \
+  --model "$MODEL_PATH" --model-revision "$MODEL_REVISION" --steps "$TOTAL_TRAINING_STEPS" \
+  --save-freq "$SAVE_FREQ" --rollouts-per-prompt "$ROLLOUTS_PER_PROMPT" \
+  --protocol "$RUN_PROTOCOL" --hydra-overrides "${HYDRA_OVERRIDES[@]}"
+
+bash "$PROJECT_DIR/scripts/run_verl_sokoban_smoke.sh" "$VERL_DIR" "${HYDRA_OVERRIDES[@]}"
+"$VERL_DIR/.venv/bin/python" "$PROJECT_DIR/scripts/plot_training_curves.py" "$OUTPUT_DIR"

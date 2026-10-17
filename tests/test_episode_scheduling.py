@@ -32,6 +32,8 @@ class EpisodeSchedulingTest(unittest.IsolatedAsyncioTestCase):
         records = episode_turn_records(episode)
         self.assertEqual(len(records), 2)
         self.assertEqual(records[1].turn_id, 1)
+        self.assertEqual(records[1].metadata["trajectory_turns"], 2)
+        self.assertEqual(records[1].trajectory_fraction, 1)
         self.assertEqual(records[1].metadata["uncertainty_statistic"], "chosen_token_surprisal")
 
     async def test_all_runnable_schedulers_select_eligible_anchor(self):

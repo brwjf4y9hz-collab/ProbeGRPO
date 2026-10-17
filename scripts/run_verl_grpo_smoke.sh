@@ -21,6 +21,20 @@ fi
 DATA_DIR="${DATA_DIR:-$VERL_DIR/data/probegrpo-gsm8k}"
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/outputs/verl-grpo-smoke}"
 TOTAL_TRAINING_STEPS="${TOTAL_TRAINING_STEPS:-5}"
+SWANLAB_ENABLED="${SWANLAB_ENABLED:-0}"
+TRAINER_LOGGER='["console"]'
+
+if [[ "$SWANLAB_ENABLED" == "1" ]]; then
+  TRAINER_LOGGER='["console","swanlab"]'
+  if ! "$VERL_DIR/.venv/bin/python" -c 'import swanlab' >/dev/null 2>&1; then
+    echo "SwanLab is enabled but is not installed in $VERL_DIR/.venv" >&2
+    echo "Install it with: uv pip install --python $VERL_DIR/.venv/bin/python swanlab" >&2
+    exit 2
+  fi
+elif [[ "$SWANLAB_ENABLED" != "0" ]]; then
+  echo "SWANLAB_ENABLED must be 0 or 1 (got: $SWANLAB_ENABLED)" >&2
+  exit 2
+fi
 
 # 在兼容性检查前设置这些变量；该检查也会读取模型配置。
 export HF_HOME="${HF_HOME:-$VERL_DIR/data/huggingface}"
@@ -85,7 +99,7 @@ mkdir -p "$HF_HOME" "$UV_CACHE_DIR"
   actor_rollout_ref.rollout.load_format=safetensors \
   actor_rollout_ref.rollout.layered_summon=True \
   trainer.use_v1=True \
-  trainer.logger='["console"]' \
+  trainer.logger="$TRAINER_LOGGER" \
   trainer.project_name=probegrpo \
   trainer.experiment_name=qwen3.5-2b-gsm8k-grpo-smoke \
   trainer.n_gpus_per_node=1 \
@@ -98,3 +112,5 @@ mkdir -p "$HF_HOME" "$UV_CACHE_DIR"
   trainer.rollout_data_dir="$OUTPUT_DIR/rollouts" \
   ray_kwargs.ray_init.runtime_env.py_executable="$VERL_PYTHON" \
   "$@" 2>&1 | tee "$OUTPUT_DIR/logs/train-${TOTAL_TRAINING_STEPS}-steps.log"
+
+python3 "$PROJECT_DIR/scripts/plot_training_curves.py" "$OUTPUT_DIR"

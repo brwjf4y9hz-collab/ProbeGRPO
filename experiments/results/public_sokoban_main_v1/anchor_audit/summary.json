@@ -1,0 +1,82 @@
+{
+  "runs": [
+    {
+      "seed": 17,
+      "run": "outputs/ablation-bbba7a8-mem25-seed17/linear_ucb_b2",
+      "sidecars_sha256": "03347891b0a964f351d5ba26e21cf6253d84ca79c47fc4297b0fea95803e9cec",
+      "anchored_probes": 376,
+      "warmup_anchors": 200,
+      "warmup_horizon_buckets": {
+        "0": 200
+      },
+      "warmup_observed_buckets": {
+        "0": 176,
+        "1": 5,
+        "2": 19
+      },
+      "warmup_eligible_bucket_sets": {
+        "0": 39,
+        "0,1": 14,
+        "0,1,2": 147
+      },
+      "warmup_last_anchor_step": 27,
+      "first_ranked_anchor_step": 28,
+      "warmup_mean_turn_id": 1.325
+    },
+    {
+      "seed": 42,
+      "run": "outputs/ablation-main-v1-seed42/linear_ucb_b2",
+      "sidecars_sha256": "1cb05855f1c28e523dc495c30133e2ba9a032ced958945b8774abfe07b868292",
+      "anchored_probes": 378,
+      "warmup_anchors": 206,
+      "warmup_horizon_buckets": {
+        "0": 206
+      },
+      "warmup_observed_buckets": {
+        "0": 178,
+        "1": 6,
+        "2": 22
+      },
+      "warmup_eligible_bucket_sets": {
+        "0": 56,
+        "0,1": 11,
+        "0,1,2": 139
+      },
+      "warmup_last_anchor_step": 27,
+      "first_ranked_anchor_step": 28,
+      "warmup_mean_turn_id": 1.2766990291262137
+    },
+    {
+      "seed": 101,
+      "run": "outputs/ablation-main-v1-seed101/linear_ucb_b2",
+      "sidecars_sha256": "afc9243b3ee6a2dacb03c2484804dec163dcd97734c5e311a6dac647d0e4f753",
+      "anchored_probes": 384,
+      "warmup_anchors": 206,
+      "warmup_horizon_buckets": {
+        "0": 204,
+        "1": 2
+      },
+      "warmup_observed_buckets": {
+        "0": 187,
+        "1": 5,
+        "2": 14
+      },
+      "warmup_eligible_bucket_sets": {
+        "0": 34,
+        "0,1": 11,
+        "0,1,2": 159,
+        "1": 1,
+        "1,2": 1
+      },
+      "warmup_last_anchor_step": 27,
+      "first_ranked_anchor_step": 28,
+      "warmup_mean_turn_id": 1.5048543689320388
+    }
+  ],
+  "warmup_anchors": 612,
+  "warmup_horizon_buckets": {
+    "0": 610,
+    "1": 2
+  },
+  "scope": "saved v1 episodes; not corrected-v2 training; both valid and failed selected probes counted"
+}
