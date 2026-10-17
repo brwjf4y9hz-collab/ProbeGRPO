@@ -44,7 +44,7 @@ python3 scripts/reproduce_results.py --artifact-root artifacts/original \
 
 ## 3. 框架与实际环境
 
-上游固定版本：`repro/verl.commit`（`cf14ded3a448107e70a206fd201817cc1cbae348`）。代码改动：`patches/verl-probegrpo.patch`，共增加 16 行。`.gitignore` 改动和 trainer 备份文件不是复现 trainer 行为所必需的。
+上游固定版本：`repro/verl.commit`（`cf14ded3a448107e70a206fd201817cc1cbae348`）。历史 trainer 改动：`patches/verl-probegrpo.patch`，共增加 16 行。2026-10-17 起另安装 `patches/verl-dense-entropy.patch`，修复 dense 分支忽略 token 分块的显存问题，详见 `docs/DENSE_ENTROPY_FIX_ZH.md`；不改科学规格，不能将其当作旧历史运行使用过的补丁。`.gitignore` 改动和 trainer 备份文件不是复现 trainer 行为所必需的。
 
 只重建源码（CPU 机器也可执行）：
 

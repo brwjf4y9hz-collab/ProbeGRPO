@@ -31,6 +31,18 @@ HARDWARE = load_script("control_hardware")
 
 
 class FinalControlTest(unittest.TestCase):
+    def test_framework_patches_are_part_of_source_fingerprint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "patches").mkdir()
+            target = root / "patches/entropy.patch"
+            target.write_text("fixture-v1")
+            before = MANIFEST.source_snapshot(root)
+            target.write_text("fixture-v2")
+            after = MANIFEST.source_snapshot(root)
+            self.assertIn("patches/entropy.patch", before["files"])
+            self.assertNotEqual(before["sha256"], after["sha256"])
+
     def test_200_step_protocol_preserves_all_other_scientific_settings(self):
         protocol = RUNNER.load_protocol()
         previous = RUNNER.load_protocol(RUNNER.PROJECT / "experiments/protocols/public_sokoban_controls_v2.json")

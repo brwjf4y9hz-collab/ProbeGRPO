@@ -62,3 +62,12 @@ README最小CPU复现证据核验通过。六组GRPO/UCB历史完整训练轨迹
 历史准备记录保留当时状态，最新状态以`docs/RELEASE_STATUS_ZH.md`和实际PR/验收为准。
 学校服务器已提供配置：四张4090 24GB；空闲不等于获配，密钥登录和home目录仍需处理，具体卡号/时长待用户确认。
 尚无学校GPU smoke或200-step结果，不因启动条件变化降低科学规格。
+
+2026-10-17 更新（学校用户日志，不是助手直接登录验收）：模型13文件校验和512/128数据准备完成；
+dual_24gb四组一步均有completion receipt；GRPO双rank LoRA/optimizer/RNG/LR scheduler从step1恢复，
+新增一步完成step2。正式矩阵seed17 GRPO-K4已有200-step完成回执，但K6随后在dense entropy申请5.77GiB时OOM，
+其余组未完成，不能称完整矩阵。probe一步的8个delta全零，零credit符合设计，但非零分支尚未由该运行覆盖。
+修复详见docs/DENSE_ENTROPY_FIX_ZH.md：保留固定verl commit和原trainer patch，额外精确引擎补丁令dense分支
+真正按token分块，保留dtype、梯度和所有正式科学规格。新源码必须新目录重做四组smoke，不能复制旧回执或自动混合
+旧baseline与新矩阵。代码/CPU验证不等于学校GPU长批次通过。学校home缺失应单独配置Triton、FlashInfer等缓存；
+不改HOME，不重装依赖，不减rollout/序列/步数/种子。SwanLab按用户要求延期，不要安装或请求API Key。

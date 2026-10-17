@@ -28,9 +28,9 @@ def sha256(path: Path) -> str:
 
 def source_snapshot(root: Path) -> dict:
     """Hash executable project inputs, including uncommitted/untracked source, not secrets/logs."""
-    paths = [p for folder in ("src", "scripts", "configs", "experiments/protocols")
+    paths = [p for folder in ("src", "scripts", "configs", "experiments/protocols", "patches")
              for p in (root / folder).rglob("*")
-             if p.is_file() and p.suffix in {".py", ".sh", ".yaml", ".yml", ".json"}]
+             if p.is_file() and p.suffix in {".py", ".sh", ".yaml", ".yml", ".json", ".patch"}]
     paths += [root / "pyproject.toml"] if (root / "pyproject.toml").is_file() else []
     files = {str(p.relative_to(root)): sha256(p) for p in sorted(paths)}
     return {"files": files, "sha256": hashlib.sha256(
@@ -78,6 +78,11 @@ def main() -> None:
         "source_snapshot": source_snapshot(args.project_dir),
         "framework_patch_sha256": sha256(args.project_dir / "patches/verl-probegrpo.patch")
         if (args.project_dir / "patches/verl-probegrpo.patch").is_file() else None,
+        "entropy_patch_sha256": sha256(args.project_dir / "patches/verl-dense-entropy.patch")
+        if (args.project_dir / "patches/verl-dense-entropy.patch").is_file() else None,
+        "installed_entropy_engine_sha256": sha256(
+            args.verl_dir / "verl/workers/engine/fsdp/transformer_impl.py")
+        if (args.verl_dir / "verl/workers/engine/fsdp/transformer_impl.py").is_file() else None,
         "launch_script_sha256": sha256(args.project_dir / "scripts/run_public_sokoban_train.sh"),
         "installed_trainer_sha256": sha256(
             args.verl_dir / "verl/trainer/ppo/v1/trainer_base.py"),
